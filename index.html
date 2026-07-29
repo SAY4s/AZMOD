@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>آزمون‌چی — دفترچه‌ی آزمون</title>
+<meta name="description" content="آزمون‌چی: دفترچه‌ی واقعی برای ساخت و شرکت در آزمون">
+
+<!--
+  فونت‌ها به‌صورت لوکال سرو می‌شوند (assets/fonts/) نه از CDN گوگل،
+  طبق سابقه‌ی ترجیح شما برای سازگاری آفلاین/VPN. @font-face در فاز ۳ اضافه می‌شود.
+-->
+<style>
+/* ================================================================
+   ۱. FONTS — سلف‌هاست (assets/fonts) طبق ترجیح آفلاین/VPN.
+   اگر فایل فونت هنوز آپلود نشده، fallback به فونت سیستم فارسی می‌افتد.
+   ================================================================ */
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('assets/fonts/Vazirmatn-Regular.woff2') format('woff2');
+  font-weight: 400; font-display: swap;
+}
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('assets/fonts/Vazirmatn-Medium.woff2') format('woff2');
+  font-weight: 500; font-display: swap;
+}
+@font-face {
+  font-family: 'Lalezar';
+  src: url('assets/fonts/Lalezar-Regular.woff2') format('woff2');
+  font-weight: 400; font-display: swap;
+}
+
+/* ================================================================
+   ۲. TOKENS (سند فاز ۱، بخش ۵) — روشن پیش‌فرض، تاریک در data-theme
+   ================================================================ */
+:root {
+  --paper-cream: #F3E9D2;
+  --paper-cream-back: #EAE0C5;
+  --paper-shadow: #D8C9A3;
+  --wood-desk: #8A6440;
+  --wood-desk-dark: #6B4A32;
+  --ink-dark: #2B2622;
+  --ink-faint: #6B6157;
+  --line-blue: #7C93B8;
+  --margin-red: #B5473F;
+  --stamp-red: #A32E2E;
+  --sticky-yellow: #F0DD8C;
+  --clip-metal: #9AA0A6;
+
+  --font-body: 'Vazirmatn', Tahoma, 'Segoe UI', sans-serif;
+  --font-hand: 'Lalezar', 'Vazirmatn', Tahoma, sans-serif;
+
+  --space-1: 8px; --space-2: 16px; --space-3: 24px;
+  --space-4: 32px; --space-5: 48px; --space-6: 64px;
+
+  --shadow-near: 0 2px 6px rgba(43, 38, 34, 0.28);
+  --shadow-far: 0 18px 40px rgba(43, 38, 34, 0.22);
+  --radius-paper: 2px;
+  --radius-sticky: 6px;
+}
+
+[data-theme="dark"] {
+  --paper-cream: #E4D6AE;
+  --paper-cream-back: #D8C89A;
+  --paper-shadow: #C2AE7C;
+  --wood-desk: #4A3220;
+  --wood-desk-dark: #2E1E13;
+  --ink-dark: #221D19;
+  --ink-faint: #59504A;
+  --shadow-near: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-far: 0 20px 44px rgba(0, 0, 0, 0.45);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper-cream: #E4D6AE; --paper-cream-back: #D8C89A; --paper-shadow: #C2AE7C;
+    --wood-desk: #4A3220; --wood-desk-dark: #2E1E13; --ink-dark: #221D19;
+    --ink-faint: #59504A; --shadow-near: 0 2px 8px rgba(0,0,0,0.5);
+    --shadow-far: 0 20px 44px rgba(0,0,0,0.45);
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; min-height: 100%; }
+[hidden] { display: none !important; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+:focus-visible { outline: 3px solid var(--margin-red); outline-offset: 2px; }
+
+/* ================================================================
+   ۳. DESK — زمینه‌ی چوبی، همیشه پشت دفترچه
+   ================================================================ */
+body {
+  font-family: var(--font-body);
+  color: var(--ink-dark);
+}
+.desk {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-4);
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.03) 0 2px, transparent 2px 6px),
+    linear-gradient(180deg, var(--wood-desk) 0%, var(--wood-desk-dark) 100%);
+  transition: background 0.4s ease;
+  perspective: 1400px;
+}
+
+.desk-decor { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.decor { position: absolute; opacity: 0.85; }
+.decor.pencil {
+  width: 120px; height: 10px; border-radius: 4px;
+  background: linear-gradient(90deg, #D9A441 0 85%, #E8D9C4 85% 92%, #6B6157 92% 100%);
+  bottom: 6%; left: 8%; transform: rotate(-18deg);
+  box-shadow: var(--shadow-near);
+}
+.decor.coffee-cup {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff8ec 0%, #e7d3ab 40%, #a9855a 100%);
+  border: 4px solid #efe3c8;
+  top: 8%; right: 6%; box-shadow: var(--shadow-near);
+}
+.decor.eraser {
+  width: 40px; height: 20px; border-radius: 4px;
+  background: linear-gradient(180deg, #e8b6bd, #d98a97);
+  bottom: 10%; right: 10%; transform: rotate(8deg);
+  box-shadow: var(--shadow-near);
+}
+.decor.sticky-note {
+  width: 56px; height: 56px; background: var(--sticky-yellow);
+  top: 12%; left: 6%; transform: rotate(6deg);
+  box-shadow: var(--shadow-near);
+}
+
+.dark-mode-toggle {
+  position: fixed; top: var(--space-2); left: var(--space-2); z-index: 20;
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 2px solid var(--paper-cream); background: var(--wood-desk-dark);
+  cursor: pointer;
+}
+
+/* ================================================================
+   ۴. NOTEBOOK SHELL
+   ================================================================ */
+.notebook {
+  position: relative; z-index: 1;
+  width: min(920px, 94vw);
+  min-height: min(600px, 80vh);
+  transform-style: preserve-3d;
+  transition: transform 0.25s ease-out;
+}
+.notebook-view {
+  display: flex; gap: 2px;
+  min-height: inherit;
+}
+.notebook-view[data-view-name="cover"],
+.notebook-view[data-view-name="auth"],
+.notebook-view[data-view-name="quizzes"],
+.notebook-view[data-view-name="manage"],
+.notebook-view[data-view-name="publish"] {
+  justify-content: center; align-items: center;
+}
+
+.notebook-cover {
+  width: 100%; height: min(600px, 80vh);
+  background: var(--wood-desk-dark);
+  border: 6px solid #2b1c10;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-far);
+  cursor: pointer;
+}
+.cover-title {
+  font-family: var(--font-hand); font-size: 56px; color: var(--paper-cream);
+  letter-spacing: 2px;
+}
+
+/* ================================================================
+   ۵. PAGE — واحد پایه‌ی هر برگه‌ی دفترچه (بافت کاغذ)
+   ================================================================ */
+.page {
+  position: relative;
+  flex: 1 1 0;
+  background:
+    linear-gradient(var(--paper-cream), var(--paper-cream)) padding-box,
+    repeating-linear-gradient(
+      to bottom, transparent 0 27px, var(--line-blue) 27px 28px
+    );
+  background-color: var(--paper-cream);
+  border-radius: var(--radius-paper);
+  padding: var(--space-4) var(--space-3);
+  min-height: min(560px, 76vh);
+  box-shadow: var(--shadow-near), var(--shadow-far);
+  color: var(--ink-dark);
+}
+/* حاشیه‌ی قرمز عمودی سمت راست هر برگه (RTL) */
+.page::before {
+  content: ""; position: absolute; top: 0; bottom: 0; right: 56px;
+  width: 1px; background: var(--margin-red); opacity: 0.55;
+}
+/* گوشه‌ی تاشده */
+.page::after {
+  content: ""; position: absolute; bottom: 0; left: 0;
+  width: 26px; height: 26px;
+  background: linear-gradient(135deg, transparent 50%, var(--paper-shadow) 50%);
+  box-shadow: -2px -2px 4px rgba(43,38,34,0.15);
+}
+.page-left, .page-right, .page-center { display: flex; flex-direction: column; gap: var(--space-2); }
+.page-center { flex: 1 1 100%; align-items: center; text-align: center; }
+
+.logo-mark {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: radial-gradient(circle, var(--margin-red) 0 8px, transparent 9px),
+              var(--sticky-yellow);
+}
+.welcome-text { font-size: 16px; line-height: 1.7; }
+.handwritten-date { font-family: var(--font-hand); font-size: 20px; color: var(--ink-faint); }
+.page-decoration { flex: 1; }
+.page-title { font-family: var(--font-hand); font-size: 28px; margin: 0; }
+.view-header h2 { font-family: var(--font-hand); font-size: 24px; color: var(--paper-cream); }
+
+/* ================================================================
+   ۶. STICKY LABEL BUTTON
+   ================================================================ */
+.sticky-label {
+  font-family: var(--font-body); font-weight: 500; font-size: 16px;
+  background: var(--sticky-yellow); color: var(--ink-dark);
+  border: none; border-radius: var(--radius-sticky);
+  padding: var(--space-2) var(--space-3);
+  box-shadow: var(--shadow-near);
+  cursor: pointer;
+  transform: rotate(-1.2deg);
+  transition: transform 0.15s ease;
+  align-self: flex-start;
+}
+.sticky-label:nth-of-type(2) { transform: rotate(1.4deg); }
+.sticky-label:hover { transform: rotate(0deg) translateY(-2px); }
+.sticky-label:active { transform: scale(0.97); }
+
+/* ================================================================
+   ۷. LOOSE PAPER CARD (لیست آزمون‌های آماده)
+   ================================================================ */
+.loose-papers {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-3); width: 100%; padding: var(--space-3);
+}
+.loose-paper {
+  position: relative;
+  background: var(--paper-cream); border-radius: var(--radius-paper);
+  padding: var(--space-2); box-shadow: var(--shadow-near);
+  cursor: pointer;
+}
+.loose-paper:nth-child(3n) { transform: rotate(-3deg); }
+.loose-paper:nth-child(3n+1) { transform: rotate(2deg); }
+.loose-paper:nth-child(3n+2) { transform: rotate(-1.5deg); }
+.loose-paper:hover { transform: rotate(0deg) translateY(-3px); z-index: 2; }
+.paper-clip {
+  position: absolute; top: -10px; right: 12px; width: 22px; height: 34px;
+  border: 4px solid var(--clip-metal); border-radius: 8px 8px 4px 4px;
+  background: transparent;
+}
+.quiz-name { font-size: 16px; margin: var(--space-1) 0; }
+.quiz-meta { display: flex; flex-wrap: wrap; gap: var(--space-1); font-size: 12px; color: var(--ink-faint); margin: 0; }
+.quiz-meta div { display: flex; gap: 4px; }
+.empty-state { color: var(--paper-cream); text-align: center; width: 100%; }
+
+/* ================================================================
+   ۸. QUESTION PAGE / OPTIONS / PAGE NAV
+   ================================================================ */
+.page-indicator {
+  display: flex; justify-content: space-between; align-items: center;
+  color: var(--paper-cream); font-family: var(--font-body); font-size: 14px;
+  padding: 0 var(--space-2);
+}
+.question-page { width: 100%; }
+.question-text { font-size: 18px; line-height: 1.8; }
+.options-list { display: flex; flex-direction: column; gap: var(--space-1); }
+.option-item {
+  display: flex; align-items: center; gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px dashed var(--paper-shadow);
+  cursor: pointer;
+}
+.page-nav {
+  display: flex; justify-content: space-between; width: 100%;
+  padding: var(--space-2); position: absolute; bottom: 0; left: 0; right: 0;
+}
+.page-nav button {
+  font-family: var(--font-body); background: none; border: 1px solid var(--paper-cream);
+  color: var(--paper-cream); padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sticky); cursor: pointer;
+}
+
+/* ================================================================
+   ۹. ENVELOPE / RESULT SHEET
+   ================================================================ */
+.envelope {
+  width: 260px; height: 170px; margin: 0 auto;
+  background: #D9C293; border-radius: 4px; position: relative;
+  box-shadow: var(--shadow-far); cursor: pointer;
+}
+.envelope::before {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(135deg, transparent 49.5%, rgba(0,0,0,0.08) 50%, transparent 50.5%),
+              linear-gradient(-135deg, transparent 49.5%, rgba(0,0,0,0.08) 50%, transparent 50.5%);
+}
+.envelope-seal {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 46px; height: 46px; border-radius: 50%; background: var(--stamp-red);
+  box-shadow: inset 0 -3px 4px rgba(0,0,0,0.3);
+}
+.envelope-title {
+  position: absolute; bottom: var(--space-1); width: 100%; text-align: center;
+  font-family: var(--font-hand); color: var(--ink-dark); font-size: 18px;
+}
+.result-sheet {
+  background: var(--paper-cream); border-radius: var(--radius-paper);
+  padding: var(--space-3); box-shadow: var(--shadow-near);
+  margin-top: var(--space-3); width: 100%;
+}
+.result-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: var(--space-2); margin: 0; }
+.result-stats dt { font-size: 12px; color: var(--ink-faint); }
+.result-stats dd { font-size: 22px; margin: 0; font-variant-numeric: tabular-nums; }
+
+/* ================================================================
+   ۱۰. STAMP (امضای بصری پروژه)
+   ================================================================ */
+.stamp-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.stamp {
+  font-family: var(--font-hand); font-size: 28px; color: var(--stamp-red);
+  border: 4px solid var(--stamp-red); border-radius: 8px;
+  padding: var(--space-1) var(--space-3);
+  transform: rotate(-8deg);
+  mix-blend-mode: multiply;
+}
+
+/* ================================================================
+   ۱۱. RESPONSIVE (پیش‌نویس؛ تکمیل در فاز ۶)
+   ================================================================ */
+@media (max-width: 720px) {
+  .notebook-view:not([data-view-name="cover"]) { flex-direction: column; }
+  .page::before { display: none; }
+  .cover-title { font-size: 40px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+     ریشه‌ی برنامه: میز چوبی. همه‌ی محتوا داخل دفترچه است، بیرون از آن
+     فقط تزئینات ثابت (نوشت‌افزار) قرار دارد — هیچ ناوبری بیرونی وجود ندارد.
+     ================================================================ -->
+<div id="app" class="desk" data-theme="light">
+
+  <!-- نوشت‌افزار پیرامونی: صرفاً اتمسفر، خارج از تعامل کاربر -->
+  <div class="desk-decor" aria-hidden="true">
+    <div class="decor pencil"></div>
+    <div class="decor coffee-cup"></div>
+    <div class="decor eraser"></div>
+    <div class="decor sticky-note"></div>
+  </div>
+
+  <!-- کنترل حالت شب/روز میز (چوب + نور تغییر می‌کند، نه رنگ کاغذ) -->
+  <button id="btn-dark-mode" class="dark-mode-toggle" type="button"
+          aria-pressed="false" aria-label="تغییر حالت شب و روز">
+    <span class="sr-only">تغییر حالت نمایش</span>
+  </button>
+
+  <!-- ============================================================
+       NotebookShell: ظرف اصلی، همیشه در مرکز صفحه.
+       data-view مشخص می‌کند کدام <section> فعال است؛ سوییچ view
+       فقط از طریق موتور ورق‌خوردن (فاز ۴/۵) انجام می‌شود، هرگز با
+       fade/slide ساده.
+       ============================================================ -->
+  <main id="notebook" class="notebook" data-view="cover"
+        role="application" aria-label="دفترچه‌ی آزمون‌چی" aria-live="polite">
+
+    <!-- ---------- View 0: جلد بسته (حالت اولیه بارگذاری) ---------- -->
+    <section id="view-cover" class="notebook-view" data-view-name="cover">
+      <div class="notebook-cover" tabindex="0" role="button"
+           aria-label="باز کردن دفترچه">
+        <h1 class="cover-title">آزمون‌چی</h1>
+      </div>
+    </section>
+
+    <!-- ---------- View 1: خانه ---------- -->
+    <section id="view-home" class="notebook-view" data-view-name="home" hidden>
+      <div class="page page-left" aria-label="صفحه‌ی سمت راست دفترچه">
+        <!-- توجه: در RTL «راست» و «چپ» بصری برعکس نام کلاس منطقی می‌شود؛
+             نام‌گذاری کلاس بر اساس ترتیب منطقی صفحه (اول/دوم) در فاز ۳ نهایی می‌شود -->
+        <div class="logo-mark" aria-hidden="true"></div>
+        <p class="welcome-text">سلام! دفترچه‌ی آزمون‌هایت اینجاست.</p>
+        <p id="handwritten-date" class="handwritten-date" data-component="HandwrittenDate">
+          <!-- JS (jalali-date.js، فاز ۵) تاریخ جلالی امروز را اینجا می‌نویسد -->
+        </p>
+        <div class="page-decoration" aria-hidden="true"></div>
+      </div>
+
+      <div class="page page-right" aria-label="صفحه‌ی انتخاب اصلی">
+        <button class="sticky-label" type="button" data-action="open-create-quiz"
+                data-component="StickyLabelButton">
+          ساخت آزمون
+        </button>
+        <button class="sticky-label" type="button" data-action="open-ready-quizzes"
+                data-component="StickyLabelButton">
+          آزمون‌های آماده
+        </button>
+      </div>
+    </section>
+
+    <!-- ---------- View 2: آزمون‌های آماده (ورق‌های شل) ---------- -->
+    <section id="view-quizzes" class="notebook-view" data-view-name="quizzes" hidden>
+      <header class="view-header">
+        <h2>آزمون‌های آماده</h2>
+      </header>
+      <div id="loose-papers-list" class="loose-papers" aria-label="لیست آزمون‌های موجود">
+        <!-- هر آزمون یک <article> از روی tpl-loose-paper توسط JS (فاز ۵) کلون می‌شود -->
+        <p class="empty-state" data-empty-state hidden>
+          هنوز آزمونی روی این میز نیست.
+        </p>
+      </div>
+    </section>
+
+    <!-- ---------- View 3: آزمون‌دهی ---------- -->
+    <section id="view-quiz-taking" class="notebook-view" data-view-name="taking" hidden>
+      <header class="page-indicator">
+        <span id="page-indicator-text" data-component="PageIndicator">صفحه ۱ از ۱</span>
+        <span id="quiz-timer" aria-live="polite" data-component="Timer">۰۰:۰۰</span>
+      </header>
+
+      <div id="question-page-container" class="page question-page"
+           data-component="QuestionPage" aria-live="polite">
+        <!-- محتوای سؤال جاری از روی tpl-question-page-view توسط JS جایگزین می‌شود -->
+      </div>
+
+      <nav class="page-nav" aria-label="پیمایش بین صفحات آزمون">
+        <button id="btn-prev-page" type="button" data-action="prev-page">صفحه‌ی قبل</button>
+        <button id="btn-next-page" type="button" data-action="next-page">صفحه‌ی بعد</button>
+      </nav>
+    </section>
+
+    <!-- ---------- View 4: نتیجه (پاکت‌نامه) ---------- -->
+    <section id="view-result" class="notebook-view" data-view-name="result" hidden>
+      <div id="envelope" class="envelope" data-state="closed" data-component="Envelope"
+           role="button" tabindex="0" aria-label="باز کردن پاکت نتیجه‌ی آزمون">
+        <div class="envelope-seal" aria-hidden="true"></div>
+        <span class="envelope-title">نتیجه‌ی آزمون</span>
+      </div>
+
+      <div id="result-sheet" class="result-sheet" data-component="ResultSheet" hidden>
+        <dl class="result-stats">
+          <div class="stat"><dt>نمره</dt><dd id="result-score">—</dd></div>
+          <div class="stat"><dt>پاسخ درست</dt><dd id="result-correct">—</dd></div>
+          <div class="stat"><dt>پاسخ غلط</dt><dd id="result-wrong">—</dd></div>
+          <div class="stat"><dt>درصد</dt><dd id="result-percent">—</dd></div>
+          <div class="stat"><dt>زمان صرف‌شده</dt><dd id="result-time">—</dd></div>
+        </dl>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================================
+       مهر سراسری «ذخیره شد / منتشر شد» — روی کل دفترچه شناور می‌شود،
+       امضای بصری پروژه (سند فاز ۱، بخش ۵.۴). توسط JS در لحظه‌ی موفقیت
+       فراخوانی می‌شود، نه یک toast دیجیتال معمولی.
+       ============================================================ -->
+  <div id="stamp-overlay" class="stamp-overlay" hidden aria-live="polite" data-component="StampButton">
+    <div class="stamp" id="stamp-text">ذخیره شد</div>
+  </div>
+
+</div>
+
+<!-- ================================================================
+     Templates: قالب‌های تکرارشونده که JS (فاز ۵) از آن‌ها clone می‌کند.
+     نگه‌داشتن آن‌ها در <template> یعنی در بارگذاری اولیه رندر نمی‌شوند
+     و در stream/parse صفحه هزینه‌ای ندارند.
+     ================================================================ -->
+<template id="tpl-loose-paper">
+  <article class="loose-paper" data-component="LoosePaperCard" tabindex="0" role="button">
+    <div class="paper-clip" aria-hidden="true"></div>
+    <h3 class="quiz-name"></h3>
+    <dl class="quiz-meta">
+      <div><dt>تعداد سؤال</dt><dd class="quiz-question-count"></dd></div>
+      <div><dt>زمان</dt><dd class="quiz-time"></dd></div>
+      <div><dt>سطح</dt><dd class="quiz-difficulty"></dd></div>
+      <div><dt>سازنده</dt><dd class="quiz-creator"></dd></div>
+    </dl>
+  </article>
+</template>
+
+<template id="tpl-question-page-view">
+  <div class="question-body">
+    <p class="question-text"></p>
+    <div class="options-list" role="radiogroup"></div>
+  </div>
+</template>
+
+<template id="tpl-option-item">
+  <label class="option-item">
+    <input type="radio" name="current-question">
+    <span class="option-label"></span>
+  </label>
+</template>
+
+<!-- ================================================================
+     PHASE 5 — JAVASCRIPT (به همین ترتیب داخل این بلوک تک‌فایلی قرار می‌گیرد)
+       1. jalali-date.js      → تاریخ جلالی امروز برای HandwrittenDate
+       2. github-read-client.js → fetch فقط-خواندنی data/quizzes/*.json
+                                    (بدون توکن؛ این مخزن عمومی است)
+       3. notebook-shell.js   → state machine بین ویوها + تیلت با موس
+       4. page-turn.js        → موتور انیمیشن ورق‌خوردن (سند فاز ۱، بخش ۷.۱)
+       5. quiz-taker.js       → منطق پاسخ‌دهی، تایمر، محاسبه‌ی نتیجه
+       6. result-envelope.js  → باز شدن پاکت + پر کردن ResultSheet
+       7. idle-effects.js     → وزش هوا بعد از بی‌تعاملی (بخش ۷.۲)
+       8. app.js              → bootstrap: خواندن querystring/localStorage
+                                    برای نتایج محلی، اتصال event listenerها
+     ================================================================ -->
+<script>
+  // اسکلت اولیه‌ی state machine؛ پیاده‌سازی کامل در فاز ۵
+  const notebook = document.getElementById('notebook');
+  function switchView(viewName) {
+    notebook.dataset.view = viewName;
+    notebook.querySelectorAll('.notebook-view').forEach((el) => {
+      el.hidden = el.dataset.viewName !== viewName;
+    });
+  }
+  document.querySelectorAll('[data-action]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const action = el.dataset.action;
+      if (action === 'open-create-quiz') switchView('home'); // موقتاً؛ ساخت آزمون در سایت عمومی وجود ندارد، به پنل ادمین لینک می‌شود
+      if (action === 'open-ready-quizzes') switchView('quizzes');
+      if (action === 'prev-page') { /* فاز ۵ */ }
+      if (action === 'next-page') { /* فاز ۵ */ }
+    });
+  });
+  document.getElementById('view-cover').querySelector('.notebook-cover')
+    .addEventListener('click', () => switchView('home'));
+</script>
+
+</body>
+</html>
