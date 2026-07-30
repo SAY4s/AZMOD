@@ -156,11 +156,15 @@ body {
   min-height: inherit;
 }
 .notebook-view[data-view-name="cover"],
-.notebook-view[data-view-name="auth"],
-.notebook-view[data-view-name="quizzes"],
-.notebook-view[data-view-name="manage"],
-.notebook-view[data-view-name="publish"] {
+.notebook-view[data-view-name="quizzes"] {
   justify-content: center; align-items: center;
+}
+/* فاز ۶/۸: این ویوها یک ستون‌اند (نه ردیف دو-صفحه‌ای)، صرف‌نظر از عرض صفحه */
+.notebook-view[data-view-name="taking"] {
+  flex-direction: column;
+}
+.notebook-view[data-view-name="result"] {
+  flex-direction: column; justify-content: center; align-items: center;
 }
 
 .notebook-cover {
@@ -285,7 +289,7 @@ body {
 }
 .page-nav {
   display: flex; justify-content: space-between; width: 100%;
-  padding: var(--space-2); position: absolute; bottom: 0; left: 0; right: 0;
+  padding: var(--space-2); margin-top: var(--space-2);
 }
 .page-nav button {
   font-family: var(--font-body); background: none; border: 1px solid var(--paper-cream);
@@ -347,6 +351,28 @@ body {
   .notebook-view:not([data-view-name="cover"]) { flex-direction: column; }
   .page::before { display: none; }
   .cover-title { font-size: 40px; }
+}
+
+/* ================================================================
+   ۱۲. ANIMATION KEYFRAMES (فاز ۴)
+   ================================================================ */
+@keyframes stampIn {
+  0%   { opacity: 0; transform: scale(1.4) rotate(-8deg); }
+  60%  { opacity: 1; transform: scale(0.9) rotate(-8deg); }
+  100% { opacity: 1; transform: scale(1) rotate(-8deg); }
+}
+.stamp-overlay.show .stamp { animation: stampIn 350ms cubic-bezier(0.34,1.2,0.64,1) forwards; }
+
+@keyframes idleSway {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(0.4deg); }
+}
+.page.idle-sway { animation: idleSway 3s ease-in-out; transform-origin: bottom center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stamp-overlay.show .stamp { animation: none; }
+  .page.idle-sway { animation: none; }
+  .notebook, .page, .sticky-label, .loose-paper, .stamp-button { transition: none !important; }
 }
 </style>
 </head>
@@ -431,7 +457,7 @@ body {
     <section id="view-quiz-taking" class="notebook-view" data-view-name="taking" hidden>
       <header class="page-indicator">
         <span id="page-indicator-text" data-component="PageIndicator">صفحه ۱ از ۱</span>
-        <span id="quiz-timer" aria-live="polite" data-component="Timer">۰۰:۰۰</span>
+        <span id="quiz-timer" data-component="Timer" aria-hidden="true">۰۰:۰۰</span>
       </header>
 
       <div id="question-page-container" class="page question-page"
@@ -523,25 +549,337 @@ body {
                                     برای نتایج محلی، اتصال event listenerها
      ================================================================ -->
 <script>
-  // اسکلت اولیه‌ی state machine؛ پیاده‌سازی کامل در فاز ۵
-  const notebook = document.getElementById('notebook');
-  function switchView(viewName) {
-    notebook.dataset.view = viewName;
-    notebook.querySelectorAll('.notebook-view').forEach((el) => {
-      el.hidden = el.dataset.viewName !== viewName;
-    });
-  }
-  document.querySelectorAll('[data-action]').forEach((el) => {
-    el.addEventListener('click', () => {
-      const action = el.dataset.action;
-      if (action === 'open-create-quiz') switchView('home'); // موقتاً؛ ساخت آزمون در سایت عمومی وجود ندارد، به پنل ادمین لینک می‌شود
-      if (action === 'open-ready-quizzes') switchView('quizzes');
-      if (action === 'prev-page') { /* فاز ۵ */ }
-      if (action === 'next-page') { /* فاز ۵ */ }
-    });
+/* ================================================================
+   CONFIG — این سه مقدار را با نام واقعی مخزن خودتان تطبیق دهید
+   ================================================================ */
+const REPO_OWNER = 'SAY4s';
+const REPO_NAME = 'azmoonchi';
+const BRANCH = 'main';
+const RAW_BASE = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}`;
+
+/* ================================================================
+   ۱. jalali-date.js — تاریخ جلالی امروز (بدون کتابخانه‌ی خارجی)
+   ================================================================ */
+function toJalali(gy, gm, gd) {
+  const g_d_m = [0,31,59,90,120,151,181,212,243,273,304,334];
+  let jy = (gy <= 1600) ? 0 : 979;
+  gy -= (gy <= 1600) ? 621 : 1600;
+  const gy2 = (gm > 2) ? (gy + 1) : gy;
+  let days = (365 * gy) + Math.floor((gy2 + 3) / 4) - Math.floor((gy2 + 99) / 100)
+    + Math.floor((gy2 + 399) / 400) - 80 + gd + g_d_m[gm - 1];
+  jy += 33 * Math.floor(days / 12053);
+  days %= 12053;
+  jy += 4 * Math.floor(days / 1461);
+  days %= 1461;
+  jy += Math.floor((days - 1) / 365);
+  if (days > 365) days = (days - 1) % 365;
+  const jm = (days < 186) ? 1 + Math.floor(days / 31) : 7 + Math.floor((days - 186) / 30);
+  const jd = 1 + ((days < 186) ? (days % 31) : ((days - 186) % 30));
+  return [jy, jm, jd];
+}
+const JALALI_MONTHS = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+const FA_DIGITS = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+function toFaDigits(n) { return String(n).replace(/[0-9]/g, (d) => FA_DIGITS[d]); }
+function jalaliTodayText() {
+  const now = new Date();
+  const [jy, jm, jd] = toJalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  return `امروز ${toFaDigits(jd)} ${JALALI_MONTHS[jm - 1]} ${toFaDigits(jy)} است`;
+}
+
+/* ================================================================
+   ۲. github-read-client.js — فقط‌خواندنی، بدون توکن (مخزن عمومی)
+   ================================================================ */
+async function fetchQuizIndex() {
+  const res = await fetch(`${RAW_BASE}/data/quizzes/index.json?_=${Date.now()}`);
+  if (!res.ok) return [];
+  return res.json().catch(() => []);
+}
+async function fetchQuizById(id) {
+  const res = await fetch(`${RAW_BASE}/data/quizzes/${id}.json?_=${Date.now()}`);
+  if (!res.ok) throw new Error('آزمون یافت نشد');
+  return res.json();
+}
+
+/* ================================================================
+   ۳. notebook-shell.js — state machine بین ویوها + تیلت با موس
+   ================================================================ */
+const notebook = document.getElementById('notebook');
+const appRoot = document.getElementById('app');
+
+function currentViewEl() {
+  return notebook.querySelector('.notebook-view:not([hidden])');
+}
+function viewEl(name) {
+  return notebook.querySelector(`.notebook-view[data-view-name="${name}"]`);
+}
+
+/* ---- page-turn.js: موتور انیمیشن ورق‌خوردن (بخش ۷.۱ سند فاز ۱) ---- */
+function prefersReducedMotion() {
+  return matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+function pageTurn(outEl, inEl) {
+  return new Promise((resolve) => {
+    if (!outEl || prefersReducedMotion()) {
+      if (outEl) outEl.hidden = true;
+      inEl.hidden = false;
+      resolve();
+      return;
+    }
+    const dur = 650;
+    outEl.style.transformOrigin = 'left center';
+    const outAnim = outEl.animate([
+      { transform: 'rotateY(0deg)' },
+      { transform: 'rotateY(-100deg)' }
+    ], { duration: dur * 0.55, easing: 'cubic-bezier(0.34,1.2,0.64,1)', fill: 'forwards' });
+    outAnim.onfinish = () => {
+      outEl.hidden = true;
+      outEl.style.transform = '';
+      inEl.hidden = false;
+      inEl.style.transformOrigin = 'left center';
+      const inAnim = inEl.animate([
+        { transform: 'rotateY(100deg)', opacity: 0.85 },
+        { transform: 'rotateY(0deg)', opacity: 1 }
+      ], { duration: dur * 0.45, easing: 'cubic-bezier(0.34,1.2,0.64,1)', fill: 'forwards' });
+      inAnim.onfinish = () => { inEl.style.transform = ''; resolve(); };
+    };
   });
-  document.getElementById('view-cover').querySelector('.notebook-cover')
-    .addEventListener('click', () => switchView('home'));
+}
+/* فلیپ محتوای داخلی یک صفحه (برای رفتن بین سؤالات، بدون تعویض کل ویو) */
+function flipContent(containerEl, renderFn) {
+  return new Promise((resolve) => {
+    if (prefersReducedMotion()) { renderFn(); resolve(); return; }
+    containerEl.style.transformOrigin = 'left center';
+    const out = containerEl.animate([
+      { transform: 'rotateY(0deg)' }, { transform: 'rotateY(-95deg)' }
+    ], { duration: 280, easing: 'cubic-bezier(0.34,1.2,0.64,1)', fill: 'forwards' });
+    out.onfinish = () => {
+      renderFn();
+      const inAnim = containerEl.animate([
+        { transform: 'rotateY(95deg)' }, { transform: 'rotateY(0deg)' }
+      ], { duration: 280, easing: 'cubic-bezier(0.34,1.2,0.64,1)', fill: 'forwards' });
+      inAnim.onfinish = () => { containerEl.style.transform = ''; resolve(); };
+    };
+  });
+}
+
+async function switchView(name) {
+  const out = currentViewEl();
+  const inEl = viewEl(name);
+  if (!inEl || out === inEl) return;
+  notebook.dataset.view = name;
+  await pageTurn(out, inEl);
+  onViewEntered(name);
+}
+
+/* تیلت ملایم دفترچه با حرکت موس (lerp برای نرمی) */
+let targetTiltX = 0, targetTiltY = 0, curTiltX = 0, curTiltY = 0;
+document.addEventListener('pointermove', (e) => {
+  if (prefersReducedMotion()) return;
+  const nx = (e.clientX / window.innerWidth - 0.5) * 2;
+  const ny = (e.clientY / window.innerHeight - 0.5) * 2;
+  targetTiltY = nx * 2; targetTiltX = -ny * 2;
+});
+function tiltLoop() {
+  curTiltX += (targetTiltX - curTiltX) * 0.06;
+  curTiltY += (targetTiltY - curTiltY) * 0.06;
+  notebook.style.transform = `rotateX(${curTiltX}deg) rotateY(${curTiltY}deg)`;
+  requestAnimationFrame(tiltLoop);
+}
+requestAnimationFrame(tiltLoop);
+
+/* ---- idle-effects.js: وزش هوای ملایم بعد از بی‌تعاملی ---- */
+let lastInteraction = Date.now();
+['pointermove', 'keydown', 'click'].forEach((evt) =>
+  document.addEventListener(evt, () => { lastInteraction = Date.now(); })
+);
+setInterval(() => {
+  if (prefersReducedMotion()) return;
+  if (Date.now() - lastInteraction > 8000) {
+    const page = notebook.querySelector('.notebook-view:not([hidden]) .page');
+    if (page && !page.classList.contains('idle-sway')) {
+      page.classList.add('idle-sway');
+      page.addEventListener('animationend', () => page.classList.remove('idle-sway'), { once: true });
+      lastInteraction = Date.now();
+    }
+  }
+}, 1000);
+
+/* ---- StampButton: مهر سراسری ---- */
+const stampOverlay = document.getElementById('stamp-overlay');
+const stampText = document.getElementById('stamp-text');
+function showStamp(text) {
+  stampText.textContent = text;
+  stampOverlay.hidden = false;
+  stampOverlay.classList.add('show');
+  setTimeout(() => { stampOverlay.classList.remove('show'); stampOverlay.hidden = true; }, 1200);
+}
+
+/* ---- Dark mode toggle (ترجیح ظاهری صرف، حساس نیست، در localStorage) ---- */
+const darkBtn = document.getElementById('btn-dark-mode');
+function applyTheme(theme) {
+  appRoot.dataset.theme = theme;
+  darkBtn.setAttribute('aria-pressed', String(theme === 'dark'));
+}
+applyTheme(localStorage.getItem('azmoonchi-theme') || 'light');
+darkBtn.addEventListener('click', () => {
+  const next = appRoot.dataset.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  localStorage.setItem('azmoonchi-theme', next);
+});
+
+/* ================================================================
+   ۴. quiz-taker.js — فلوی آزمون‌دهی
+   ================================================================ */
+const state = { quiz: null, index: 0, answers: {}, startedAt: null, timerId: null };
+
+async function loadQuizzesList() {
+  const list = document.getElementById('loose-papers-list');
+  const emptyState = list.querySelector('[data-empty-state]');
+  list.querySelectorAll('.loose-paper').forEach((el) => el.remove());
+  const quizzes = await fetchQuizIndex();
+  if (!quizzes.length) { emptyState.hidden = false; return; }
+  emptyState.hidden = true;
+  const tpl = document.getElementById('tpl-loose-paper');
+  quizzes.forEach((q) => {
+    const node = tpl.content.cloneNode(true);
+    const article = node.querySelector('.loose-paper');
+    article.querySelector('.quiz-name').textContent = q.name;
+    article.querySelector('.quiz-question-count').textContent = toFaDigits(q.questionCount) + ' سؤال';
+    article.querySelector('.quiz-time').textContent = toFaDigits(q.time) + ' دقیقه';
+    article.querySelector('.quiz-difficulty').textContent = q.difficulty || 'متوسط';
+    article.querySelector('.quiz-creator').textContent = q.creator || 'ادمین';
+    article.addEventListener('click', () => startQuiz(q.id));
+    article.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') startQuiz(q.id); });
+    list.appendChild(article);
+  });
+}
+
+async function startQuiz(id) {
+  try {
+    state.quiz = await fetchQuizById(id);
+    state.index = 0;
+    state.answers = {};
+    state.startedAt = Date.now();
+    await switchView('taking');
+    renderQuestion();
+    startTimer();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+function startTimer() {
+  clearInterval(state.timerId);
+  const timerEl = document.getElementById('quiz-timer');
+  state.timerId = setInterval(() => {
+    const secs = Math.floor((Date.now() - state.startedAt) / 1000);
+    const mm = String(Math.floor(secs / 60)).padStart(2, '0');
+    const ss = String(secs % 60).padStart(2, '0');
+    timerEl.textContent = toFaDigits(mm) + ':' + toFaDigits(ss);
+  }, 1000);
+}
+
+function renderQuestion() {
+  const container = document.getElementById('question-page-container');
+  const q = state.quiz.questions[state.index];
+  const doRender = () => {
+    const tpl = document.getElementById('tpl-question-page-view');
+    container.innerHTML = '';
+    const node = tpl.content.cloneNode(true);
+    node.querySelector('.question-text').textContent = q.text;
+    const optList = node.querySelector('.options-list');
+    const optTpl = document.getElementById('tpl-option-item');
+    q.options.forEach((opt, i) => {
+      const optNode = optTpl.content.cloneNode(true);
+      const input = optNode.querySelector('input');
+      input.value = i;
+      input.checked = state.answers[state.index] === i;
+      input.addEventListener('change', () => { state.answers[state.index] = i; });
+      optNode.querySelector('.option-label').textContent = opt.text;
+      optList.appendChild(optNode);
+    });
+    container.appendChild(node);
+  };
+  flipContent(container, doRender);
+  document.getElementById('page-indicator-text').textContent =
+    `صفحه ${toFaDigits(state.index + 1)} از ${toFaDigits(state.quiz.questions.length)}`;
+  document.getElementById('btn-prev-page').disabled = state.index === 0;
+}
+
+document.getElementById('btn-prev-page').addEventListener('click', () => {
+  if (state.index > 0) { state.index--; renderQuestion(); }
+});
+document.getElementById('btn-next-page').addEventListener('click', () => {
+  if (state.index < state.quiz.questions.length - 1) {
+    state.index++; renderQuestion();
+  } else {
+    finishQuiz();
+  }
+});
+
+function finishQuiz() {
+  clearInterval(state.timerId);
+  const total = state.quiz.questions.length;
+  let correct = 0;
+  state.quiz.questions.forEach((q, i) => {
+    const chosen = state.answers[i];
+    if (chosen !== undefined && q.options[chosen] && q.options[chosen].correct) correct++;
+  });
+  const wrong = total - correct;
+  const percent = Math.round((correct / total) * 100);
+  const secs = Math.floor((Date.now() - state.startedAt) / 1000);
+  const mm = String(Math.floor(secs / 60)).padStart(2, '0');
+  const ss = String(secs % 60).padStart(2, '0');
+
+  document.getElementById('result-score').textContent = toFaDigits(correct) + ' از ' + toFaDigits(total);
+  document.getElementById('result-correct').textContent = toFaDigits(correct);
+  document.getElementById('result-wrong').textContent = toFaDigits(wrong);
+  document.getElementById('result-percent').textContent = toFaDigits(percent) + '٪';
+  document.getElementById('result-time').textContent = toFaDigits(mm) + ':' + toFaDigits(ss);
+
+  document.getElementById('envelope').dataset.state = 'closed';
+  document.getElementById('result-sheet').hidden = true;
+  switchView('result');
+}
+
+/* ---- result-envelope.js ---- */
+const envelope = document.getElementById('envelope');
+function openEnvelope() {
+  if (envelope.dataset.state === 'open') return;
+  envelope.dataset.state = 'open';
+  const sheet = document.getElementById('result-sheet');
+  sheet.hidden = false;
+  if (!prefersReducedMotion()) {
+    sheet.animate(
+      [{ transform: 'translateY(-24px)', opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }],
+      { duration: 500, easing: 'cubic-bezier(0.22,1,0.36,1)' }
+    );
+  }
+}
+envelope.addEventListener('click', openEnvelope);
+envelope.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') openEnvelope(); });
+
+/* ================================================================
+   ۵. app.js — bootstrap + اتصال اکشن‌های عمومی
+   ================================================================ */
+document.querySelectorAll('[data-action]').forEach((el) => {
+  el.addEventListener('click', () => {
+    const action = el.dataset.action;
+    if (action === 'open-create-quiz') {
+      alert('ساخت آزمون فقط از پنل ادمین (azmoonchi-admin) در دسترس است.');
+    }
+    if (action === 'open-ready-quizzes') { switchView('quizzes'); }
+  });
+});
+function onViewEntered(name) {
+  if (name === 'quizzes') loadQuizzesList();
+}
+document.getElementById('view-cover').querySelector('.notebook-cover')
+  .addEventListener('click', () => switchView('home'));
+document.getElementById('view-cover').querySelector('.notebook-cover')
+  .addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') switchView('home'); });
+
+document.getElementById('handwritten-date').textContent = jalaliTodayText();
 </script>
 
 </body>
