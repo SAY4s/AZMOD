@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>آزمون چی | شرکت در آزمون</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          charcoal: { DEFAULT:'#4E4E4E', deep:'#333333', dark:'#242424', panel:'#3A3A3A' },
+          gold: { DEFAULT:'#E9D0A9', light:'#F4E8D3', dim:'#C9AD82' }
+        },
+        fontFamily: { sans: ['Vazirmatn','sans-serif'] }
+      }
+    }
+  }
+</script>
+<style>
+  html { scroll-behavior:smooth; }
+  body { font-family:'Vazirmatn', sans-serif; background:#242424; }
+  ::selection { background:#E9D0A9; color:#242424; }
+  .fa-num { font-feature-settings:"ss01"; }
+
+  .glass {
+    background: linear-gradient(145deg, rgba(255,255,255,0.055), rgba(255,255,255,0.015));
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(233,208,169,0.14);
+  }
+  .divider-gold { height:1px; background: linear-gradient(90deg, transparent, #E9D0A9 50%, transparent); }
+
+  .btn-gold { background:#E9D0A9; color:#242424; transition:all .25s cubic-bezier(.2,.8,.2,1); }
+  .btn-gold:hover { background:#F4E8D3; box-shadow:0 8px 24px -6px rgba(233,208,169,.5); transform:translateY(-1px); }
+  .btn-gold:disabled { opacity:.4; cursor:not-allowed; transform:none; box-shadow:none; }
+
+  .btn-outline { border:1px solid rgba(233,208,169,.4); color:#E9D0A9; transition:all .25s ease; }
+  .btn-outline:hover { background:rgba(233,208,169,.08); border-color:#E9D0A9; }
+
+  input {
+    background: rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.1); color:#fff;
+    transition: border-color .2s ease, box-shadow .2s ease;
+  }
+  input::placeholder { color: rgba(255,255,255,.35); }
+  input:focus { outline:none; border-color:#E9D0A9; box-shadow:0 0 0 3px rgba(233,208,169,.14); }
+
+  .seal svg{display:block;}
+
+  .qopt {
+    transition: border-color .2s ease, background .2s ease;
+  }
+  .qopt.selected { border-color:#E9D0A9 !important; background: rgba(233,208,169,.08); }
+  .qopt.correct-answer { border-color:#7fd39a !important; background: rgba(127,211,154,.08); }
+  .qopt.wrong-answer { border-color:#e08a8a !important; background: rgba(224,138,138,.08); }
+
+  .view { display:none; animation: fadeUp .5s cubic-bezier(.2,.8,.2,1) both; }
+  .view.active { display:block; }
+  @keyframes fadeUp { from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
+
+  @media (prefers-reduced-motion: reduce) { .view{animation:none;} }
+</style>
+</head>
+<body class="text-white antialiased min-h-screen">
+
+<div class="relative min-h-screen overflow-x-hidden">
+  <div class="absolute inset-0 -z-10 bg-gradient-to-b from-charcoal-dark via-[#333333] to-charcoal-dark"></div>
+  <div class="absolute -top-40 -left-40 w-[30rem] h-[30rem] rounded-full bg-gold/10 blur-[120px] -z-10"></div>
+
+  <!-- header -->
+  <header class="border-b border-white/10">
+    <div class="max-w-3xl mx-auto px-5 py-5 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="seal w-8 h-8">
+          <svg viewBox="0 0 60 60" width="30" height="30">
+            <circle cx="30" cy="30" r="27" fill="none" stroke="#E9D0A9" stroke-width="1.4"/>
+            <path d="M20 32 L27 39 L41 23" fill="none" stroke="#E9D0A9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="font-extrabold text-gold text-sm">آزمون چی</span>
+      </div>
+      <div id="timerBox" class="hidden items-center gap-2 rounded-full border border-gold/30 px-4 py-1.5 text-sm">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E9D0A9" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>
+        <span id="timerText" class="fa-num text-gold font-bold">۴۵:۰۰</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-5 py-10 pb-24">
+
+    <!-- ============ LOADING / ERROR ============ -->
+    <div id="view-error" class="view text-center py-24">
+      <div class="seal w-16 h-16 mx-auto mb-6 opacity-60">
+        <svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" fill="none" stroke="#E9D0A9" stroke-width="1.4"/><path d="M20 20l20 20M40 20 20 40" stroke="#E9D0A9" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <h2 class="text-xl font-bold mb-2">لینک آزمون نامعتبر است</h2>
+      <p class="text-white/50 text-sm">این لینک ناقص است یا آزمونی برای نمایش وجود ندارد. لطفاً لینک صحیح را از سازنده آزمون دریافت کنید.</p>
+      <a href="index.html" class="btn-outline inline-block mt-8 text-sm font-bold px-6 py-2.5 rounded-xl">بازگشت به صفحه اصلی</a>
+    </div>
+
+    <!-- ============ ENTRY / ACCESS GATE ============ -->
+    <div id="view-entry" class="view">
+      <div class="glass rounded-3xl p-8 sm:p-10 text-center">
+        <div class="seal w-16 h-16 mx-auto mb-6">
+          <svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" fill="none" stroke="#E9D0A9" stroke-width="1.3"/><circle cx="30" cy="30" r="21" fill="none" stroke="#E9D0A9" stroke-width="0.8"/><path d="M20 32 L27 39 L41 23" fill="none" stroke="#E9D0A9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h1 id="entryTitle" class="text-2xl font-black mb-2"></h1>
+        <p id="entryDesc" class="text-white/55 text-sm leading-7 mb-8 max-w-lg mx-auto"></p>
+
+        <div class="grid grid-cols-2 gap-3 max-w-sm mx-auto mb-8 text-sm">
+          <div class="rounded-xl border border-white/10 py-3">
+            <p class="text-white/45 text-xs mb-1">تعداد سؤالات</p>
+            <p id="entryQCount" class="font-bold text-gold fa-num"></p>
+          </div>
+          <div class="rounded-xl border border-white/10 py-3">
+            <p class="text-white/45 text-xs mb-1">مدت زمان</p>
+            <p id="entryTime" class="font-bold text-gold fa-num"></p>
+          </div>
+        </div>
+
+        <div id="restrictedGate" class="hidden max-w-sm mx-auto text-right mb-6">
+          <label class="block text-xs text-white/50 mb-2">کد ملی / شماره دانش‌آموزی</label>
+          <input id="participantIdInput" placeholder="مثال: ۰۰۱۲۳۴۵۶۷۸" class="w-full rounded-lg px-3 py-2.5 text-sm mb-2 fa-num">
+          <p id="gateError" class="hidden text-xs text-red-300 mb-2">این کد در فهرست شرکت‌کنندگان مجاز یافت نشد.</p>
+        </div>
+
+        <div class="max-w-sm mx-auto text-right mb-8">
+          <label class="block text-xs text-white/50 mb-2">نام و نام خانوادگی</label>
+          <input id="participantNameInput" placeholder="نام خود را وارد کنید" class="w-full rounded-lg px-3 py-2.5 text-sm">
+        </div>
+
+        <button onclick="startExam()" class="btn-gold font-bold px-10 py-3.5 rounded-2xl">شروع آزمون</button>
+      </div>
+    </div>
+
+    <!-- ============ EXAM (questions) ============ -->
+    <div id="view-exam" class="view">
+      <div class="mb-6">
+        <div class="flex items-center justify-between text-xs text-white/50 mb-2">
+          <span id="progressText" class="fa-num"></span>
+          <span id="progressPct" class="fa-num text-gold"></span>
+        </div>
+        <div class="h-1.5 rounded-full bg-white/10 overflow-hidden">
+          <div id="progressBar" class="h-full bg-gold transition-all duration-300" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div id="questionsList" class="space-y-6"></div>
+
+      <div class="glass rounded-2xl p-6 mt-8 text-center">
+        <p class="text-white/55 text-sm mb-4">پس از اطمینان از پاسخ‌ها، آزمون را نهایی کنید. امکان ویرایش پس از ثبت وجود ندارد.</p>
+        <button onclick="submitExam()" class="btn-gold font-bold px-10 py-3.5 rounded-2xl">ثبت نهایی پاسخ‌ها</button>
+      </div>
+    </div>
+
+    <!-- ============ RESULT ============ -->
+    <div id="view-result" class="view text-center">
+      <div class="glass rounded-3xl p-10">
+        <div class="seal w-16 h-16 mx-auto mb-6">
+          <svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" fill="none" stroke="#E9D0A9" stroke-width="1.4"/><path d="M20 32 L27 39 L41 23" fill="none" stroke="#E9D0A9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h2 class="text-xl font-black mb-2">آزمون با موفقیت ثبت شد</h2>
+        <p class="text-white/50 text-sm mb-8">پاسخ‌های شما با موفقیت دریافت شد. با تشکر از شرکت شما.</p>
+
+        <div id="resultHiddenNote" class="hidden text-white/60 text-sm">نتیجه‌ی این آزمون توسط برگزارکننده مخفی شده و نمایش داده نمی‌شود.</div>
+
+        <div id="resultScoreBox" class="hidden">
+          <p class="text-white/45 text-xs mb-2">نمره شما</p>
+          <p class="text-5xl font-black text-gold fa-num mb-2"><span id="resultScore"></span><span class="text-xl text-white/40">/<span id="resultMax"></span></span></p>
+          <p id="resultStatusPill" class="inline-block text-xs font-bold px-4 py-1.5 rounded-full mt-2"></p>
+        </div>
+      </div>
+
+      <div id="detailedReview" class="hidden mt-8 space-y-5 text-right"></div>
+    </div>
+
+  </main>
+
+  <footer class="text-center text-white/25 text-[11px] pb-8">© ۱۴۰۳ آزمون چی — برگزار شده با پلتفرم آزمون چی</footer>
+</div>
+
+<script>
+/* ============================================================
+   DECODE EXAM FROM URL HASH
+   ============================================================ */
+function b64DecodeUnicode(str){
+  return decodeURIComponent(atob(str).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+}
+function showView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+let exam = null;
+let participant = { name:'', id:'' };
+let answers = {}; // questionId -> [optionIds]
+let timerInterval = null;
+let secondsLeft = 0;
+let startedAt = null;
+
+(function init(){
+  const hash = window.location.hash;
+  const match = hash.match(/e=([^&]+)/);
+  if(!match){ showView('view-error'); return; }
+  try{
+    const json = b64DecodeUnicode(decodeURIComponent(match[1]));
+    exam = JSON.parse(json);
+    if(!exam.questions || !exam.questions.length) throw new Error('empty');
+  }catch(err){
+    showView('view-error');
+    return;
+  }
+  renderEntry();
+})();
+
+function toFa(n){
+  const fa = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+  return String(n).replace(/\d/g, d=>fa[d]);
+}
+function escapeHtml(str){
+  return String(str||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* ============================================================
+   ENTRY / ACCESS GATE
+   ============================================================ */
+function renderEntry(){
+  document.getElementById('entryTitle').textContent = exam.title || 'آزمون بدون عنوان';
+  document.getElementById('entryDesc').textContent = exam.description || '';
+  document.getElementById('entryQCount').textContent = toFa(exam.questions.length) + ' سؤال';
+  document.getElementById('entryTime').textContent = toFa(exam.settings?.timeLimitMinutes ?? 0) + ' دقیقه';
+
+  if(exam.settings?.access?.mode === 'restricted'){
+    document.getElementById('restrictedGate').classList.remove('hidden');
+  }
+  showView('view-entry');
+}
+
+function startExam(){
+  const name = document.getElementById('participantNameInput').value.trim();
+  if(!name){
+    document.getElementById('participantNameInput').focus();
+    return;
+  }
+  if(exam.settings?.access?.mode === 'restricted'){
+    const idVal = document.getElementById('participantIdInput').value.trim();
+    const allowed = (exam.settings.access.allowedIds || []).map(s=>s.trim());
+    if(!idVal || !allowed.includes(idVal)){
+      document.getElementById('gateError').classList.remove('hidden');
+      document.getElementById('participantIdInput').focus();
+      return;
+    }
+    participant.id = idVal;
+  }
+  participant.name = name;
+  startedAt = Date.now();
+
+  if(exam.settings?.shuffleQuestions){
+    exam.questions = shuffle(exam.questions.slice());
+  }
+
+  renderQuestions();
+  showView('view-exam');
+
+  const mins = exam.settings?.timeLimitMinutes;
+  if(mins && mins > 0){
+    secondsLeft = mins * 60;
+    document.getElementById('timerBox').classList.remove('hidden');
+    document.getElementById('timerBox').classList.add('flex');
+    updateTimerText();
+    timerInterval = setInterval(()=>{
+      secondsLeft--;
+      updateTimerText();
+      if(secondsLeft <= 0){
+        clearInterval(timerInterval);
+        submitExam(true);
+      }
+    }, 1000);
+  }
+}
+
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function updateTimerText(){
+  const m = Math.max(0, Math.floor(secondsLeft/60));
+  const s = Math.max(0, secondsLeft%60);
+  document.getElementById('timerText').textContent = `${toFa(String(m).padStart(2,'0'))}:${toFa(String(s).padStart(2,'0'))}`;
+}
+
+/* ============================================================
+   QUESTIONS
+   ============================================================ */
+function renderQuestions(){
+  const wrap = document.getElementById('questionsList');
+  wrap.innerHTML = '';
+  exam.questions.forEach((q, qi)=>{
+    answers[q.id] = answers[q.id] || [];
+    const card = document.createElement('div');
+    card.className = 'glass rounded-2xl p-6';
+    card.innerHTML = `
+      <div class="flex items-start gap-3 mb-4">
+        <span class="w-7 h-7 shrink-0 rounded-full bg-gold/15 text-gold text-xs font-black flex items-center justify-center fa-num">${toFa(qi+1)}</span>
+        <div class="flex-1">
+          <p class="font-semibold leading-7">${escapeHtml(q.text)}</p>
+          ${q.image ? `<img src="${escapeHtml(q.image)}" class="mt-3 rounded-lg max-h-56 border border-white/10" onerror="this.style.display='none'">` : ''}
+          ${q.type==='multiple' ? '<p class="text-[11px] text-gold/70 mt-1">می‌توانید بیش از یک گزینه انتخاب کنید</p>' : ''}
+        </div>
+      </div>
+      <div class="space-y-2" id="opts-${q.id}"></div>
+    `;
+    wrap.appendChild(card);
+
+    const optsWrap = card.querySelector(`#opts-${q.id}`);
+    q.options.forEach((o, oi)=>{
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'qopt w-full flex items-center gap-3 rounded-xl border border-white/10 p-3 text-right hover:border-gold/40 transition-colors';
+      row.id = `opt-${q.id}-${o.id}`;
+      row.onclick = ()=>selectOption(q, o.id);
+      row.innerHTML = `
+        <span class="shrink-0 w-6 h-6 rounded-${q.type==='multiple'?'md':'full'} border border-white/25 flex items-center justify-center text-[11px] font-black opt-indicator"></span>
+        <span class="flex-1 text-sm">${escapeHtml(o.text)}</span>
+        ${o.image ? `<img src="${escapeHtml(o.image)}" class="w-10 h-10 rounded-lg object-cover border border-white/10" onerror="this.style.display='none'">` : ''}
+      `;
+      optsWrap.appendChild(row);
+    });
+  });
+  updateProgress();
+}
+
+function selectOption(q, oid){
+  if(q.type === 'single'){
+    answers[q.id] = [oid];
+  } else {
+    const cur = answers[q.id];
+    if(cur.includes(oid)) answers[q.id] = cur.filter(x=>x!==oid);
+    else cur.push(oid);
+  }
+  q.options.forEach(o=>{
+    const el = document.getElementById(`opt-${q.id}-${o.id}`);
+    const selected = answers[q.id].includes(o.id);
+    el.classList.toggle('selected', selected);
+    el.querySelector('.opt-indicator').textContent = selected ? '✓' : '';
+  });
+  updateProgress();
+}
+
+function updateProgress(){
+  const total = exam.questions.length;
+  const answered = exam.questions.filter(q=>answers[q.id] && answers[q.id].length>0).length;
+  document.getElementById('progressText').textContent = `پاسخ داده‌شده: ${toFa(answered)} از ${toFa(total)}`;
+  const pct = total ? Math.round((answered/total)*100) : 0;
+  document.getElementById('progressPct').textContent = toFa(pct) + '٪';
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+/* ============================================================
+   SUBMIT & SCORE
+   ============================================================ */
+function submitExam(auto){
+  if(!auto){
+    const total = exam.questions.length;
+    const answered = exam.questions.filter(q=>answers[q.id] && answers[q.id].length>0).length;
+    if(answered < total){
+      const ok = confirm(`شما به ${toFa(answered)} از ${toFa(total)} سؤال پاسخ داده‌اید. آیا مطمئن هستید که می‌خواهید آزمون را ثبت کنید؟`);
+      if(!ok) return;
+    }
+  }
+  if(timerInterval) clearInterval(timerInterval);
+
+  let correctCount = 0;
+  const review = exam.questions.map(q=>{
+    const correctIds = q.options.filter(o=>o.isCorrect).map(o=>o.id).sort();
+    const givenIds = (answers[q.id]||[]).slice().sort();
+    const isCorrect = correctIds.length===givenIds.length && correctIds.every((id,i)=>id===givenIds[i]);
+    if(isCorrect) correctCount++;
+    return { q, correctIds, givenIds, isCorrect };
+  });
+
+  const maxScore = exam.questions.length;
+  const timeTaken = startedAt ? Math.round((Date.now()-startedAt)/60000) : 0;
+  renderResult(correctCount, maxScore, timeTaken, review);
+  showView('view-result');
+}
+
+function renderResult(score, max, timeTaken, review){
+  const mode = exam.settings?.resultDisplay || 'scoreOnly';
+  const passThreshold = Math.ceil(max*0.5);
+  const passed = score >= passThreshold;
+
+  if(mode === 'hidden'){
+    document.getElementById('resultHiddenNote').classList.remove('hidden');
+    return;
+  }
+
+  document.getElementById('resultScoreBox').classList.remove('hidden');
+  document.getElementById('resultScore').textContent = toFa(score);
+  document.getElementById('resultMax').textContent = toFa(max);
+  const pill = document.getElementById('resultStatusPill');
+  pill.textContent = passed ? 'قبول' : 'مردود';
+  pill.className = 'inline-block text-xs font-bold px-4 py-1.5 rounded-full mt-2 ' + (passed ? 'bg-emerald-400/10 text-emerald-300 border border-emerald-400/30' : 'bg-red-400/10 text-red-300 border border-red-400/30');
+
+  if(mode === 'detailed'){
+    const box = document.getElementById('detailedReview');
+    box.classList.remove('hidden');
+    review.forEach((r, i)=>{
+      const card = document.createElement('div');
+      card.className = 'glass rounded-2xl p-5';
+      card.innerHTML = `
+        <div class="flex items-center gap-2 mb-3">
+          <span class="w-6 h-6 rounded-full ${r.isCorrect?'bg-emerald-400/20 text-emerald-300':'bg-red-400/20 text-red-300'} text-xs font-black flex items-center justify-center fa-num">${toFa(i+1)}</span>
+          <p class="font-semibold text-sm">${escapeHtml(r.q.text)}</p>
+        </div>
+        <div class="space-y-1.5">
+          ${r.q.options.map(o=>{
+            let cls = 'border-white/10';
+            if(o.isCorrect) cls = 'correct-answer';
+            else if(r.givenIds.includes(o.id) && !o.isCorrect) cls = 'wrong-answer';
+            return `<div class="qopt ${cls} rounded-lg border p-2.5 text-xs flex items-center justify-between">
+              <span>${escapeHtml(o.text)}</span>
+              ${o.isCorrect ? '<span class="text-emerald-300">پاسخ صحیح</span>' : (r.givenIds.includes(o.id) ? '<span class="text-red-300">پاسخ شما</span>' : '')}
+            </div>`;
+          }).join('')}
+        </div>
+      `;
+      box.appendChild(card);
+    });
+  }
+}
+</script>
+</body>
+</html>
