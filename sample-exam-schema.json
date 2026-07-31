@@ -1,0 +1,94 @@
+{
+  "examId": "exam_x82f_r19",
+  "title": "آزمون میان‌ترم ریاضی — نوبت اول",
+  "description": "این آزمون شامل مباحث فصل ۱ تا ۳ کتاب ریاضی است.",
+  "settings": {
+    "timeLimitMinutes": 45,
+    "shuffleQuestions": true,
+    "resultDisplay": "detailed",
+    "access": {
+      "mode": "restricted",
+      "allowedIds": [
+        "0012345678",
+        "0023456789",
+        "0034567890",
+        "0045678901"
+      ]
+    }
+  },
+  "plan": {
+    "tier": "paid",
+    "userLimit": 100,
+    "features": {
+      "maxConcurrentExams": "unlimited",
+      "reportCardGeneration": true,
+      "fullAnalytics": true,
+      "support": "24/7"
+    }
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "type": "single",
+      "text": "حاصل عبارت ۲۳ + ۱۷ کدام است؟",
+      "image": null,
+      "options": [
+        { "id": "o1", "text": "۳۰", "image": null, "isCorrect": false },
+        { "id": "o2", "text": "۴۰", "image": null, "isCorrect": true },
+        { "id": "o3", "text": "۴۵", "image": null, "isCorrect": false },
+        { "id": "o4", "text": "۵۰", "image": null, "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q2",
+      "type": "single",
+      "text": "کدام شکل زیر یک مثلث متساوی‌الاضلاع است؟",
+      "image": "https://cdn.azmoonchi.com/exams/x82f/q2-diagram.png",
+      "options": [
+        { "id": "o5", "text": "شکل الف", "image": "https://cdn.azmoonchi.com/exams/x82f/q2-a.png", "isCorrect": true },
+        { "id": "o6", "text": "شکل ب", "image": "https://cdn.azmoonchi.com/exams/x82f/q2-b.png", "isCorrect": false },
+        { "id": "o7", "text": "شکل ج", "image": "https://cdn.azmoonchi.com/exams/x82f/q2-c.png", "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q3",
+      "type": "multiple",
+      "text": "کدام یک از اعداد زیر بر ۳ بخش‌پذیرند؟ (بیش از یک گزینه ممکن است صحیح باشد)",
+      "image": null,
+      "options": [
+        { "id": "o8", "text": "۹", "image": null, "isCorrect": true },
+        { "id": "o9", "text": "۱۴", "image": null, "isCorrect": false },
+        { "id": "o10", "text": "۲۱", "image": null, "isCorrect": true },
+        { "id": "o11", "text": "۲۵", "image": null, "isCorrect": false }
+      ]
+    }
+  ],
+  "results": [
+    {
+      "participant": { "name": "علی محمدی", "nationalId": "0012345678" },
+      "score": 18,
+      "maxScore": 20,
+      "timeTakenMinutes": 29,
+      "status": "pass",
+      "submittedAt": "2025-04-12T09:41:00+03:30",
+      "answers": [
+        { "questionId": "q1", "selectedOptionIds": ["o2"], "isCorrect": true },
+        { "questionId": "q2", "selectedOptionIds": ["o5"], "isCorrect": true },
+        { "questionId": "q3", "selectedOptionIds": ["o8", "o10"], "isCorrect": true }
+      ]
+    },
+    {
+      "participant": { "name": "زهرا احمدی", "nationalId": "0023456789" },
+      "score": 9,
+      "maxScore": 20,
+      "timeTakenMinutes": 41,
+      "status": "fail",
+      "submittedAt": "2025-04-12T09:55:00+03:30",
+      "answers": [
+        { "questionId": "q1", "selectedOptionIds": ["o1"], "isCorrect": false },
+        { "questionId": "q2", "selectedOptionIds": ["o5"], "isCorrect": true },
+        { "questionId": "q3", "selectedOptionIds": ["o9"], "isCorrect": false }
+      ]
+    }
+  ]
+}
