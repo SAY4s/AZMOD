@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>آزمون چی | داشبورد ساخت و تحلیل آزمون</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          charcoal: { DEFAULT:'#4E4E4E', deep:'#333333', dark:'#242424', panel:'#3A3A3A' },
+          gold: { DEFAULT:'#E9D0A9', light:'#F4E8D3', dim:'#C9AD82' }
+        },
+        fontFamily: { sans: ['Vazirmatn','sans-serif'] }
+      }
+    }
+  }
+</script>
+<style>
+  html { scroll-behavior:smooth; }
+  body { font-family:'Vazirmatn', sans-serif; background:#242424; }
+  ::selection { background:#E9D0A9; color:#242424; }
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-track { background:#242424; }
+  ::-webkit-scrollbar-thumb { background:#4E4E4E; border-radius:8px; }
+  ::-webkit-scrollbar-thumb:hover { background:#E9D0A9; }
+  .fa-num { font-feature-settings:"ss01"; }
+
+  .glass {
+    background: linear-gradient(145deg, rgba(255,255,255,0.055), rgba(255,255,255,0.015));
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(233,208,169,0.14);
+  }
+  .divider-gold { height:1px; background: linear-gradient(90deg, transparent, #E9D0A9 50%, transparent); }
+
+  .btn-gold { background:#E9D0A9; color:#242424; transition:all .25s cubic-bezier(.2,.8,.2,1); }
+  .btn-gold:hover { background:#F4E8D3; box-shadow:0 8px 24px -6px rgba(233,208,169,.5); transform:translateY(-1px); }
+  .btn-gold:disabled { opacity:.35; cursor:not-allowed; transform:none; box-shadow:none; }
+
+  .btn-outline { border:1px solid rgba(233,208,169,.4); color:#E9D0A9; transition:all .25s ease; }
+  .btn-outline:hover { background:rgba(233,208,169,.08); border-color:#E9D0A9; }
+
+  .btn-ghost { color:#cfcfcf; transition:all .2s ease; }
+  .btn-ghost:hover { color:#E9D0A9; }
+
+  input, textarea, select {
+    background: rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.1); color:#fff;
+    transition: border-color .2s ease, box-shadow .2s ease;
+  }
+  input::placeholder, textarea::placeholder { color: rgba(255,255,255,.35); }
+  input:focus, textarea:focus, select:focus {
+    outline:none; border-color:#E9D0A9; box-shadow:0 0 0 3px rgba(233,208,169,.14);
+  }
+
+  .tab-btn { position:relative; transition: color .25s ease; }
+  .tab-btn.active { color:#E9D0A9; }
+  .tab-btn.active::after {
+    content:''; position:absolute; right:0; bottom:-9px; width:100%; height:2px; background:#E9D0A9; border-radius:2px;
+  }
+
+  .view { display:none; animation: fadeUp .5s cubic-bezier(.2,.8,.2,1) both; }
+  .view.active { display:block; }
+  @keyframes fadeUp { from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
+
+  .qcard { transition: border-color .25s ease, box-shadow .25s ease; }
+  .qcard:hover { border-color: rgba(233,208,169,.4); }
+
+  .opt-row.correct { border-color:#E9D0A9 !important; background: rgba(233,208,169,.08); }
+
+  .badge-lock {
+    background: rgba(233,208,169,.1); border:1px dashed rgba(233,208,169,.45); color:#E9D0A9;
+  }
+
+  .toggle { appearance:none; width:42px; height:24px; border-radius:999px; background:rgba(255,255,255,.15); position:relative; cursor:pointer; transition:.25s; border:1px solid rgba(255,255,255,.15); }
+  .toggle:checked { background:#E9D0A9; border-color:#E9D0A9; }
+  .toggle::before { content:''; position:absolute; top:2px; right:2px; width:18px; height:18px; border-radius:999px; background:#fff; transition:.25s; }
+  .toggle:checked::before { transform:translateX(-18px); }
+
+  .seal svg{display:block;}
+
+  .scrollbar-thin { scrollbar-width:thin; }
+
+  .status-pill { font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; }
+  .status-pass { background:rgba(120,200,140,.12); color:#8ee0a2; border:1px solid rgba(120,200,140,.3);}
+  .status-fail { background:rgba(220,110,110,.12); color:#f0a3a3; border:1px solid rgba(220,110,110,.3);}
+
+  @media (prefers-reduced-motion: reduce) { .view{animation:none;} }
+</style>
+</head>
+<body class="text-white antialiased">
+
+<div class="min-h-screen flex">
+
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside class="hidden lg:flex flex-col w-72 shrink-0 bg-charcoal-dark border-l border-white/10 p-6">
+    <a href="index.html" class="flex items-center gap-2 mb-10 group">
+      <span class="seal w-9 h-9">
+        <svg viewBox="0 0 60 60" width="34" height="34">
+          <circle cx="30" cy="30" r="27" fill="none" stroke="#E9D0A9" stroke-width="1.4"/>
+          <path d="M20 32 L27 39 L41 23" fill="none" stroke="#E9D0A9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <span class="text-lg font-extrabold text-gold">آزمون چی</span>
+    </a>
+    <a href="index.html" class="flex items-center gap-1.5 text-[11px] text-white/40 hover:text-gold transition-colors -mt-7 mb-8">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l-6 6 6 6M4 12h16" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      بازگشت به سایت
+    </a>
+
+    <nav class="flex flex-col gap-1 text-sm">
+      <button data-tab="builder" class="tabnav flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 text-gold font-bold">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+        ساخت آزمون
+      </button>
+      <button data-tab="access" class="tabnav flex items-center gap-3 px-4 py-3 rounded-xl text-white/70 hover:bg-white/5 hover:text-gold transition-colors">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg>
+        دسترسی و امنیت
+      </button>
+      <button data-tab="analytics" class="tabnav flex items-center gap-3 px-4 py-3 rounded-xl text-white/70 hover:bg-white/5 hover:text-gold transition-colors">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V9M11 19V5M18 19v-7"/></svg>
+        تحلیل و نتایج
+      </button>
+    </nav>
+
+    <div class="mt-auto pt-8">
+      <div class="glass rounded-xl p-4 mb-4">
+        <p class="text-xs text-white/50 mb-2">پلن فعال</p>
+        <div class="flex items-center justify-between mb-3">
+          <span id="planLabel" class="font-bold text-gold text-sm">رایگان (۳ کاربر)</span>
+          <span id="planIcon" class="text-lg">🔓</span>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="setPlan('free')" class="flex-1 text-xs py-1.5 rounded-lg border border-white/15 hover:border-gold/50 transition-colors">رایگان</button>
+          <button onclick="setPlan('paid')" class="flex-1 text-xs py-1.5 rounded-lg border border-white/15 hover:border-gold/50 transition-colors">پرداختی</button>
+        </div>
+        <p class="text-[11px] text-white/40 mt-2 leading-5">جهت نمایش قفل امکانات بر اساس پلن، جابه‌جا کنید.</p>
+      </div>
+      <p class="text-[11px] text-white/30 text-center">© ۱۴۰۳ آزمون چی</p>
+    </div>
+  </aside>
+
+  <!-- ===================== MAIN ===================== -->
+  <div class="flex-1 min-w-0">
+
+    <!-- top bar -->
+    <header class="sticky top-0 z-30 bg-charcoal-dark/90 backdrop-blur border-b border-white/10">
+      <div class="flex items-center justify-between px-5 lg:px-9 py-4">
+        <div class="flex items-center gap-4 min-w-0">
+          <!-- mobile tabs -->
+          <div class="flex lg:hidden gap-1 text-xs">
+            <button data-tab="builder" class="tabnav px-3 py-2 rounded-lg bg-white/5 text-gold font-bold">ساخت</button>
+            <button data-tab="access" class="tabnav px-3 py-2 rounded-lg text-white/70">دسترسی</button>
+            <button data-tab="analytics" class="tabnav px-3 py-2 rounded-lg text-white/70">تحلیل</button>
+          </div>
+          <div class="hidden lg:block min-w-0">
+            <p class="text-white/45 text-xs">داشبورد مدیریت</p>
+            <input id="examTitle" oninput="examState.title=this.value" value="آزمون میان‌ترم ریاضی — نوبت اول" class="bg-transparent border-none text-lg font-black text-white p-0 focus:ring-0 focus:shadow-none w-72 truncate" placeholder="عنوان آزمون">
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <input type="file" id="jsonImportInput" accept=".json" class="hidden" onchange="importJSON(event)">
+          <button onclick="document.getElementById('jsonImportInput').click()" class="btn-outline text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 rounded-xl flex items-center gap-1.5">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M5 21h14" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="hidden sm:inline">درون‌ریزی JSON</span>
+          </button>
+          <button onclick="exportJSON()" class="btn-outline text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 rounded-xl flex items-center gap-1.5">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9M17 14l-5-5-5 5M5 3h14" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="hidden sm:inline">خروجی JSON</span>
+          </button>
+          <button onclick="openPreview()" class="btn-outline text-xs sm:text-sm font-bold px-4 py-2 rounded-xl">پیش‌نمایش JSON</button>
+          <button onclick="publishExam()" class="btn-gold text-xs sm:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 10.5 15.5 6.5M8.5 13.5l7 4" stroke-linecap="round"/><circle cx="6" cy="12" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="18" cy="18" r="2.2"/></svg>
+            <span>انتشار آزمون</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="p-5 lg:p-9 max-w-[1400px] mx-auto">
+
+      <!-- ================= VIEW: BUILDER ================= -->
+      <section id="view-builder" class="view active">
+
+        <div class="grid xl:grid-cols-3 gap-6">
+          <!-- exam meta -->
+          <div class="glass rounded-2xl p-6 xl:col-span-1 h-fit">
+            <h3 class="font-bold text-gold mb-5 flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>
+              تنظیمات کلی آزمون
+            </h3>
+
+            <label class="block text-xs text-white/50 mb-1.5">عنوان آزمون</label>
+            <input id="examTitleMirror" oninput="examState.title=this.value; document.getElementById('examTitle').value=this.value" value="آزمون میان‌ترم ریاضی — نوبت اول" class="w-full rounded-lg px-3 py-2.5 text-sm mb-4">
+
+            <label class="block text-xs text-white/50 mb-1.5">توضیحات</label>
+            <textarea oninput="examState.description=this.value" rows="2" class="w-full rounded-lg px-3 py-2.5 text-sm mb-4 resize-none" placeholder="توضیح کوتاه درباره آزمون...">این آزمون شامل مباحث فصل ۱ تا ۳ کتاب ریاضی است.</textarea>
+
+            <div class="grid grid-cols-2 gap-3 mb-5">
+              <div>
+                <label class="block text-xs text-white/50 mb-1.5">مدت زمان (دقیقه)</label>
+                <input type="number" value="45" oninput="examState.settings.timeLimitMinutes=Number(this.value)" class="w-full rounded-lg px-3 py-2.5 text-sm fa-num">
+              </div>
+              <div>
+                <label class="block text-xs text-white/50 mb-1.5">درهم‌ریزی سؤالات</label>
+                <div class="flex items-center h-[42px]">
+                  <input type="checkbox" class="toggle" checked onchange="examState.settings.shuffleQuestions=this.checked">
+                </div>
+              </div>
+            </div>
+
+            <div class="divider-gold mb-5"></div>
+
+            <h4 class="font-bold text-sm mb-3">نمایش نتیجه به شرکت‌کننده</h4>
+            <div class="space-y-2 mb-2">
+              <label class="flex items-center gap-3 rounded-lg border border-white/10 p-3 cursor-pointer hover:border-gold/40 transition-colors has-[:checked]:border-gold has-[:checked]:bg-gold/5">
+                <input type="radio" name="resultDisplay" value="hidden" onchange="examState.settings.resultDisplay=this.value" class="accent-[#E9D0A9]">
+                <div>
+                  <p class="text-sm font-semibold">مخفی‌سازی کامل نتایج</p>
+                  <p class="text-xs text-white/45">شرکت‌کننده هیچ نتیجه‌ای نمی‌بیند.</p>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 rounded-lg border border-white/10 p-3 cursor-pointer hover:border-gold/40 transition-colors has-[:checked]:border-gold has-[:checked]:bg-gold/5">
+                <input type="radio" name="resultDisplay" value="scoreOnly" checked onchange="examState.settings.resultDisplay=this.value" class="accent-[#E9D0A9]">
+                <div>
+                  <p class="text-sm font-semibold">نمایش فقط نمره</p>
+                  <p class="text-xs text-white/45">فقط امتیاز نهایی نمایش داده می‌شود.</p>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 rounded-lg border border-white/10 p-3 cursor-pointer hover:border-gold/40 transition-colors has-[:checked]:border-gold has-[:checked]:bg-gold/5">
+                <input type="radio" name="resultDisplay" value="detailed" onchange="examState.settings.resultDisplay=this.value" class="accent-[#E9D0A9]">
+                <div>
+                  <p class="text-sm font-semibold">نمره + شرح پاسخ‌ها</p>
+                  <p class="text-xs text-white/45">نمایش پاسخ صحیح/غلط برای هر سؤال.</p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- questions -->
+          <div class="xl:col-span-2 space-y-5">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-lg">سؤالات آزمون <span id="qCount" class="text-gold fa-num text-sm">(۰)</span></h3>
+              <button onclick="addQuestion()" class="btn-gold text-sm font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+                افزودن سؤال
+              </button>
+            </div>
+
+            <div id="questionsWrap" class="space-y-5"></div>
+
+            <button onclick="addQuestion()" class="w-full border border-dashed border-white/20 hover:border-gold/50 rounded-2xl py-6 text-white/50 hover:text-gold transition-colors text-sm">
+              + یک سؤال جدید اضافه کنید
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW: ACCESS ================= -->
+      <section id="view-access" class="view">
+        <div class="grid lg:grid-cols-2 gap-6">
+          <div class="glass rounded-2xl p-7">
+            <h3 class="font-bold text-gold mb-1 flex items-center gap-2">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg>
+              سطح دسترسی به آزمون
+            </h3>
+            <p class="text-white/50 text-sm mb-6">مشخص کنید چه کسانی اجازه شرکت در این آزمون را دارند.</p>
+
+            <div class="space-y-3">
+              <label class="flex items-start gap-3 rounded-xl border border-white/10 p-4 cursor-pointer hover:border-gold/40 transition-colors has-[:checked]:border-gold has-[:checked]:bg-gold/5">
+                <input type="radio" name="accessMode" value="public" checked onchange="setAccessMode(this.value)" class="mt-1 accent-[#E9D0A9]">
+                <div>
+                  <p class="font-bold text-sm mb-1">عمومی (Public)</p>
+                  <p class="text-xs text-white/50 leading-6">هر فردی که لینک اختصاصی آزمون را داشته باشد می‌تواند شرکت کند.</p>
+                </div>
+              </label>
+              <label class="flex items-start gap-3 rounded-xl border border-white/10 p-4 cursor-pointer hover:border-gold/40 transition-colors has-[:checked]:border-gold has-[:checked]:bg-gold/5">
+                <input type="radio" name="accessMode" value="restricted" onchange="setAccessMode(this.value)" class="mt-1 accent-[#E9D0A9]">
+                <div>
+                  <p class="font-bold text-sm mb-1">محدود (Restricted)</p>
+                  <p class="text-xs text-white/50 leading-6">شرکت‌کنندگان باید کد ملی یا شماره دانش‌آموزی مجاز خود را وارد کنند.</p>
+                </div>
+              </label>
+            </div>
+
+            <div id="restrictedBox" class="hidden mt-6 pt-6 border-t border-white/10">
+              <label class="block text-xs text-white/50 mb-2">فهرست کدهای مجاز (هر مورد در یک خط)</label>
+              <textarea id="allowedIdsBox" oninput="parseAllowedIds()" rows="7" class="w-full rounded-lg px-3 py-3 text-sm font-mono resize-none" placeholder="0012345678&#10;0023456789&#10;0034567890"></textarea>
+              <div class="flex items-center justify-between mt-3">
+                <p class="text-xs text-white/45">تعداد شناسایی‌شده: <span id="allowedCount" class="text-gold font-bold fa-num">۰</span> کد</p>
+                <label class="btn-outline text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer">
+                  درون‌ریزی از فایل CSV/TXT
+                  <input type="file" accept=".csv,.txt" class="hidden" onchange="importIdsFile(event)">
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass rounded-2xl p-7">
+            <h3 class="font-bold text-gold mb-5 flex items-center gap-2">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>
+              پیش‌نمایش صفحه ورود شرکت‌کننده
+            </h3>
+            <div class="rounded-2xl bg-black/25 border border-white/10 p-8 text-center">
+              <div class="seal w-14 h-14 mx-auto mb-4">
+                <svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" fill="none" stroke="#E9D0A9" stroke-width="1.3"/><path d="M20 32 L27 39 L41 23" fill="none" stroke="#E9D0A9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <p class="font-bold mb-1" id="previewExamTitle">آزمون میان‌ترم ریاضی — نوبت اول</p>
+              <p class="text-white/45 text-xs mb-6">azmoonchi.com/e/x82f-r19</p>
+
+              <div id="previewPublicNote" class="text-sm text-white/60">
+                این آزمون برای عموم شرکت‌کنندگان با لینک، آزاد است.
+              </div>
+              <div id="previewRestrictedNote" class="hidden text-right">
+                <label class="block text-xs text-white/50 mb-1.5">کد ملی / شماره دانش‌آموزی</label>
+                <input placeholder="مثال: ۰۰۱۲۳۴۵۶۷۸" class="w-full rounded-lg px-3 py-2.5 text-sm mb-4 fa-num">
+                <button class="btn-gold w-full text-sm font-bold py-2.5 rounded-xl">ورود به آزمون</button>
+                <p class="text-[11px] text-white/35 mt-3">فقط کدهای موجود در فهرست مجاز، امکان ورود دارند.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= VIEW: ANALYTICS ================= -->
+      <section id="view-analytics" class="view">
+
+        <!-- KPIs -->
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+          <div class="glass rounded-2xl p-5">
+            <p class="text-xs text-white/50 mb-2">کل شرکت‌کنندگان</p>
+            <p class="text-3xl font-black text-gold fa-num">۱۴۸</p>
+            <p class="text-[11px] text-emerald-400/80 mt-1 fa-num">▲ ۱۲٪ نسبت به آزمون قبلی</p>
+          </div>
+          <div class="glass rounded-2xl p-5">
+            <p class="text-xs text-white/50 mb-2">میانگین نمره</p>
+            <p class="text-3xl font-black text-gold fa-num">۱۶.۴<span class="text-sm text-white/40">/۲۰</span></p>
+            <p class="text-[11px] text-white/40 mt-1">از مجموع نمره کل</p>
+          </div>
+          <div class="glass rounded-2xl p-5">
+            <p class="text-xs text-white/50 mb-2">نرخ قبولی</p>
+            <p class="text-3xl font-black text-gold fa-num">۸۲٪</p>
+            <p class="text-[11px] text-white/40 mt-1">حد نصاب: ۱۰ از ۲۰</p>
+          </div>
+          <div class="glass rounded-2xl p-5">
+            <p class="text-xs text-white/50 mb-2">میانگین زمان پاسخ‌گویی</p>
+            <p class="text-3xl font-black text-gold fa-num">۳۲<span class="text-sm text-white/40"> دقیقه</span></p>
+            <p class="text-[11px] text-white/40 mt-1">از ۴۵ دقیقه مجاز</p>
+          </div>
+        </div>
+
+        <!-- charts -->
+        <div class="grid lg:grid-cols-3 gap-5 mb-6">
+          <div class="glass rounded-2xl p-5 lg:col-span-2">
+            <p class="text-sm font-bold mb-4">توزیع نمرات شرکت‌کنندگان</p>
+            <canvas id="scoreChart" height="130"></canvas>
+          </div>
+          <div class="glass rounded-2xl p-5">
+            <p class="text-sm font-bold mb-4">نسبت قبولی / مردودی</p>
+            <canvas id="passChart" height="130"></canvas>
+          </div>
+        </div>
+
+        <div class="glass rounded-2xl p-5 mb-6">
+          <p class="text-sm font-bold mb-4">روند ثبت‌نام و شرکت در آزمون</p>
+          <canvas id="trendChart" height="80"></canvas>
+        </div>
+
+        <!-- results table -->
+        <div class="glass rounded-2xl p-5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+            <p class="text-sm font-bold">فهرست نتایج شرکت‌کنندگان</p>
+            <div class="flex flex-wrap items-center gap-2">
+              <input id="searchInput" oninput="renderTable()" placeholder="جستجوی نام یا کد ملی..." class="rounded-lg px-3 py-2 text-xs w-48">
+              <select id="statusFilter" onchange="renderTable()" class="rounded-lg px-3 py-2 text-xs">
+                <option value="all">همه وضعیت‌ها</option>
+                <option value="pass">قبول</option>
+                <option value="fail">مردود</option>
+              </select>
+              <button onclick="exportCSV()" class="btn-outline text-xs font-bold px-3 py-2 rounded-lg">خروجی CSV</button>
+              <button id="bulkReportBtn" onclick="tryBulkReport()" class="btn-gold text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1">
+                کارنامه گروهی
+              </button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto scrollbar-thin">
+            <table class="w-full text-sm min-w-[720px]">
+              <thead>
+                <tr class="text-white/45 text-xs border-b border-white/10">
+                  <th class="text-right font-medium py-3 px-2">نام شرکت‌کننده</th>
+                  <th class="text-right font-medium py-3 px-2">کد ملی</th>
+                  <th class="text-right font-medium py-3 px-2">نمره</th>
+                  <th class="text-right font-medium py-3 px-2">زمان</th>
+                  <th class="text-right font-medium py-3 px-2">وضعیت</th>
+                  <th class="text-right font-medium py-3 px-2">عملیات</th>
+                </tr>
+              </thead>
+              <tbody id="resultsBody" class="divide-y divide-white/5"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ===================== JSON PREVIEW MODAL ===================== -->
+<div id="previewModal" class="hidden fixed inset-0 z-50 items-center justify-center p-5 bg-black/60 backdrop-blur-sm">
+  <div class="glass bg-charcoal-dark rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-white/10">
+      <p class="font-bold text-gold">خروجی JSON آزمون</p>
+      <button onclick="closePreview()" class="btn-ghost text-xl leading-none">×</button>
+    </div>
+    <pre id="jsonPreviewText" class="flex-1 overflow-auto p-6 text-xs text-white/80 leading-6 font-mono whitespace-pre-wrap"></pre>
+    <div class="flex justify-end gap-2 px-6 py-4 border-t border-white/10">
+      <button onclick="copyJSON()" class="btn-outline text-xs font-bold px-4 py-2 rounded-lg">کپی</button>
+      <button onclick="exportJSON()" class="btn-gold text-xs font-bold px-4 py-2 rounded-lg">دانلود فایل JSON</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PUBLISH / SHARE LINK MODAL ===================== -->
+<div id="publishModal" class="hidden fixed inset-0 z-50 items-center justify-center p-5 bg-black/60 backdrop-blur-sm">
+  <div class="glass bg-charcoal-dark rounded-2xl w-full max-w-lg overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-white/10">
+      <p class="font-bold text-gold flex items-center gap-2">
+        <span class="seal w-6 h-6"><svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" fill="none" stroke="#E9D0A9" stroke-width="1.6"/><path d="M20 32 L27 39 L41 23" fill="none" stroke="#E9D0A9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        آزمون منتشر شد
+      </p>
+      <button onclick="closePublish()" class="btn-ghost text-xl leading-none">×</button>
+    </div>
+    <div class="p-6">
+      <p class="text-sm text-white/60 mb-4 leading-7">این لینک را برای شرکت‌کنندگان ارسال کنید. آزمون به‌همراه تمام سؤالات، تنظیمات نمایش نتیجه و فهرست دسترسی، درون خود لینک ذخیره شده و نیازی به سرور جداگانه ندارد.</p>
+      <div class="flex items-center gap-2 mb-4">
+        <input id="shareLinkInput" readonly class="flex-1 rounded-lg px-3 py-2.5 text-xs font-mono" onclick="this.select()">
+        <button onclick="copyShareLink()" class="btn-outline text-xs font-bold px-3 py-2.5 rounded-lg shrink-0">کپی لینک</button>
+      </div>
+      <div id="publishModeNote" class="text-xs rounded-lg p-3 mb-4 bg-white/5 border border-white/10 text-white/55"></div>
+      <a id="openExamLink" href="#" target="_blank" class="btn-gold w-full text-center block text-sm font-bold py-3 rounded-xl">باز کردن به‌عنوان شرکت‌کننده</a>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   STATE
+   ============================================================ */
+let currentPlan = 'free'; // 'free' | 'paid'
+let qIdSeed = 0, oIdSeed = 0;
+
+const examState = {
+  examId: "exam_" + Math.random().toString(36).slice(2,10),
+  title: "آزمون میان‌ترم ریاضی — نوبت اول",
+  description: "این آزمون شامل مباحث فصل ۱ تا ۳ کتاب ریاضی است.",
+  settings: {
+    timeLimitMinutes: 45,
+    shuffleQuestions: true,
+    resultDisplay: "scoreOnly", // hidden | scoreOnly | detailed
+    access: {
+      mode: "public", // public | restricted
+      allowedIds: []
+    }
+  },
+  plan: { tier: "free", userLimit: 3 },
+  questions: []
+};
+
+function newQuestion(){
+  qIdSeed++;
+  return {
+    id: "q" + qIdSeed,
+    type: "single",
+    text: "",
+    image: null,
+    options: [ newOption(), newOption() ]
+  };
+}
+function newOption(){
+  oIdSeed++;
+  return { id: "o" + oIdSeed, text: "", image: null, isCorrect: false };
+}
+
+/* seed two sample questions */
+examState.questions.push(Object.assign(newQuestion(), {
+  text: "حاصل عبارت ۲۳ + ۱۷ کدام است؟",
+  options: [
+    Object.assign(newOption(), { text: "۳۰", isCorrect:false }),
+    Object.assign(newOption(), { text: "۴۰", isCorrect:true }),
+    Object.assign(newOption(), { text: "۴۵", isCorrect:false }),
+  ]
+}));
+examState.questions.push(Object.assign(newQuestion(), {
+  text: "کدام شکل زیر یک مثلث متساوی‌الاضلاع است؟",
+  image: null,
+  options: [
+    Object.assign(newOption(), { text: "شکل الف", image:"", isCorrect:true }),
+    Object.assign(newOption(), { text: "شکل ب", image:"", isCorrect:false }),
+  ]
+}));
+
+/* ============================================================
+   TAB NAVIGATION
+   ============================================================ */
+document.querySelectorAll('.tabnav').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tabnav').forEach(b=>{
+      b.classList.remove('active','bg-white/5','text-gold','font-bold');
+      b.classList.add('text-white/70');
+    });
+    document.querySelectorAll(`[data-tab="${tab}"]`).forEach(b=>{
+      b.classList.add('active','bg-white/5','text-gold','font-bold');
+      b.classList.remove('text-white/70');
+    });
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+tab).classList.add('active');
+    if(tab==='analytics') requestAnimationFrame(initCharts);
+  });
+});
+
+/* ============================================================
+   PLAN LOGIC
+   ============================================================ */
+function setPlan(p, users){
+  currentPlan = p;
+  examState.plan.tier = p;
+  const u = users || (p === 'free' ? 3 : 100);
+  examState.plan.userLimit = u;
+  document.getElementById('planLabel').textContent = p==='free'
+    ? `رایگان (${toFa(3)} کاربر)`
+    : (u==='custom' ? 'پرداختی (کاربر سفارشی)' : `پرداختی (${toFa(u)} کاربر)`);
+  document.getElementById('planIcon').textContent = p==='free' ? '🔓' : '⭐';
+  renderQuestions();
+  refreshBulkReportBtn();
+}
+function refreshBulkReportBtn(){
+  const btn = document.getElementById('bulkReportBtn');
+  if(currentPlan === 'free'){
+    btn.innerHTML = '🔒 کارنامه گروهی <span class="opacity-70">(ویژه پلن پرداختی)</span>';
+  } else {
+    btn.innerHTML = 'دانلود کارنامه گروهی (PDF)';
+  }
+}
+function tryBulkReport(){
+  if(currentPlan === 'free'){
+    alert('صدور خودکار کارنامه فقط در پلن‌های پرداختی فعال است. برای فعال‌سازی، پلن خود را ارتقا دهید.');
+    return;
+  }
+  alert('در حال آماده‌سازی فایل کارنامه گروهی (PDF)...');
+}
+refreshBulkReportBtn();
+
+/* ============================================================
+   QUESTION BUILDER RENDER
+   ============================================================ */
+function renderQuestions(){
+  const wrap = document.getElementById('questionsWrap');
+  wrap.innerHTML = '';
+  document.getElementById('qCount').textContent = `(${toFa(examState.questions.length)})`;
+
+  examState.questions.forEach((q, qIndex)=>{
+    const card = document.createElement('div');
+    card.className = 'qcard glass rounded-2xl p-5 border border-white/10';
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded-full bg-gold/15 text-gold text-xs font-black flex items-center justify-center fa-num">${toFa(qIndex+1)}</span>
+          <select class="rounded-lg px-2 py-1.5 text-xs" onchange="updateQuestion('${q.id}','type',this.value)">
+            <option value="single" ${q.type==='single'?'selected':''}>تک‌گزینه‌ای</option>
+            <option value="multiple" ${q.type==='multiple'?'selected':''}>چندگزینه‌ای</option>
+          </select>
+        </div>
+        <button onclick="removeQuestion('${q.id}')" class="btn-ghost text-xs flex items-center gap-1">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          حذف سؤال
+        </button>
+      </div>
+
+      <textarea rows="2" placeholder="متن سؤال را وارد کنید..." class="w-full rounded-lg px-3 py-2.5 text-sm mb-3 resize-none" oninput="updateQuestion('${q.id}','text',this.value)">${escapeHtml(q.text)}</textarea>
+
+      <div class="flex items-center gap-2 mb-4">
+        <input type="text" placeholder="آدرس تصویر سؤال (اختیاری) — URL" value="${escapeHtml(q.image||'')}" class="flex-1 rounded-lg px-3 py-2 text-xs" oninput="updateQuestion('${q.id}','image',this.value)">
+        ${q.image ? `<img src="${escapeHtml(q.image)}" class="w-10 h-10 rounded-lg object-cover border border-white/10" onerror="this.style.display='none'">` : ''}
+      </div>
+
+      <div class="space-y-2 mb-3" id="opts-${q.id}"></div>
+
+      <button onclick="addOption('${q.id}')" class="text-xs text-gold/80 hover:text-gold flex items-center gap-1.5 mt-1">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+        افزودن گزینه
+      </button>
+    `;
+    wrap.appendChild(card);
+
+    const optsWrap = card.querySelector(`#opts-${q.id}`);
+    q.options.forEach((o, oIndex)=>{
+      const row = document.createElement('div');
+      row.className = `opt-row flex items-center gap-2 rounded-lg border border-white/10 p-2 ${o.isCorrect ? 'correct' : ''}`;
+      row.innerHTML = `
+        <button title="علامت‌گذاری به‌عنوان پاسخ صحیح" onclick="toggleCorrect('${q.id}','${o.id}')"
+          class="shrink-0 w-6 h-6 rounded-full border ${o.isCorrect ? 'bg-gold border-gold text-charcoal-dark' : 'border-white/25 text-transparent'} flex items-center justify-center text-xs font-black transition-colors">✓</button>
+        <span class="text-xs text-white/40 shrink-0 fa-num">${String.fromCharCode(1571+oIndex) || ''}</span>
+        <input type="text" value="${escapeHtml(o.text)}" placeholder="متن گزینه ${toFa(oIndex+1)}" class="flex-1 bg-transparent border-none text-sm py-1 px-1 focus:ring-0" oninput="updateOption('${q.id}','${o.id}','text',this.value)">
+        <input type="text" value="${escapeHtml(o.image||'')}" placeholder="URL تصویر (اختیاری)" class="w-40 rounded-lg px-2 py-1.5 text-[11px]" oninput="updateOption('${q.id}','${o.id}','image',this.value)">
+        <button onclick="removeOption('${q.id}','${o.id}')" class="btn-ghost shrink-0 px-1">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12" stroke-linecap="round"/></svg>
+        </button>
+      `;
+      optsWrap.appendChild(row);
+    });
+  });
+}
+
+function addQuestion(){
+  if(currentPlan==='free' && examState.questions.length >= 20){
+    alert('در پلن رایگان حداکثر تعداد سؤالات محدود است. برای افزودن سؤالات بیشتر، پلن خود را ارتقا دهید.');
+    return;
+  }
+  examState.questions.push(newQuestion());
+  renderQuestions();
+}
+function removeQuestion(id){
+  examState.questions = examState.questions.filter(q=>q.id!==id);
+  renderQuestions();
+}
+function updateQuestion(id, field, val){
+  const q = examState.questions.find(q=>q.id===id);
+  if(q) q[field] = val;
+  if(field==='image') renderQuestions();
+}
+function addOption(qid){
+  const q = examState.questions.find(q=>q.id===qid);
+  q.options.push(newOption());
+  renderQuestions();
+}
+function removeOption(qid, oid){
+  const q = examState.questions.find(q=>q.id===qid);
+  q.options = q.options.filter(o=>o.id!==oid);
+  renderQuestions();
+}
+function updateOption(qid, oid, field, val){
+  const q = examState.questions.find(q=>q.id===qid);
+  const o = q.options.find(o=>o.id===oid);
+  o[field] = val;
+}
+function toggleCorrect(qid, oid){
+  const q = examState.questions.find(q=>q.id===qid);
+  if(q.type==='single'){
+    q.options.forEach(o=>o.isCorrect = (o.id===oid));
+  } else {
+    const o = q.options.find(o=>o.id===oid);
+    o.isCorrect = !o.isCorrect;
+  }
+  renderQuestions();
+}
+
+/* ============================================================
+   ACCESS CONTROL
+   ============================================================ */
+function setAccessMode(mode){
+  examState.settings.access.mode = mode;
+  document.getElementById('restrictedBox').classList.toggle('hidden', mode!=='restricted');
+  document.getElementById('previewPublicNote').classList.toggle('hidden', mode==='restricted');
+  document.getElementById('previewRestrictedNote').classList.toggle('hidden', mode!=='restricted');
+}
+function parseAllowedIds(){
+  const raw = document.getElementById('allowedIdsBox').value;
+  const ids = raw.split('\n').map(s=>s.trim()).filter(Boolean);
+  examState.settings.access.allowedIds = ids;
+  document.getElementById('allowedCount').textContent = toFa(ids.length);
+}
+function importIdsFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    document.getElementById('allowedIdsBox').value = reader.result;
+    parseAllowedIds();
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+/* ============================================================
+   JSON IMPORT / EXPORT
+   ============================================================ */
+function buildExportObject(){
+  return {
+    examId: examState.examId,
+    title: examState.title,
+    description: examState.description,
+    settings: {
+      timeLimitMinutes: examState.settings.timeLimitMinutes,
+      shuffleQuestions: examState.settings.shuffleQuestions,
+      resultDisplay: examState.settings.resultDisplay,
+      access: {
+        mode: examState.settings.access.mode,
+        allowedIds: examState.settings.access.mode === 'restricted' ? examState.settings.access.allowedIds : []
+      }
+    },
+    plan: examState.plan,
+    questions: examState.questions.map(q=>({
+      id: q.id, type: q.type, text: q.text, image: q.image || null,
+      options: q.options.map(o=>({ id:o.id, text:o.text, image:o.image||null, isCorrect:o.isCorrect }))
+    }))
+  };
+}
+function exportJSON(){
+  const obj = buildExportObject();
+  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = (examState.title || 'exam').replace(/\s+/g,'_') + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function importJSON(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const data = JSON.parse(reader.result);
+      examState.examId = data.examId || examState.examId;
+      examState.title = data.title || examState.title;
+      examState.description = data.description || '';
+      examState.settings.timeLimitMinutes = data.settings?.timeLimitMinutes ?? 45;
+      examState.settings.shuffleQuestions = data.settings?.shuffleQuestions ?? true;
+      examState.settings.resultDisplay = data.settings?.resultDisplay || 'scoreOnly';
+      examState.settings.access.mode = data.settings?.access?.mode || 'public';
+      examState.settings.access.allowedIds = data.settings?.access?.allowedIds || [];
+      examState.questions = (data.questions||[]).map(q=>({
+        id: q.id || ('q'+(++qIdSeed)), type: q.type||'single', text:q.text||'', image:q.image||null,
+        options: (q.options||[]).map(o=>({ id:o.id||('o'+(++oIdSeed)), text:o.text||'', image:o.image||null, isCorrect:!!o.isCorrect }))
+      }));
+      document.getElementById('examTitle').value = examState.title;
+      document.getElementById('examTitleMirror').value = examState.title;
+      document.getElementById('allowedIdsBox').value = examState.settings.access.allowedIds.join('\n');
+      document.querySelector(`input[name="accessMode"][value="${examState.settings.access.mode}"]`).checked = true;
+      setAccessMode(examState.settings.access.mode);
+      document.querySelector(`input[name="resultDisplay"][value="${examState.settings.resultDisplay}"]`).checked = true;
+      parseAllowedIds();
+      renderQuestions();
+      alert('آزمون با موفقیت درون‌ریزی شد.');
+    }catch(err){
+      alert('فایل JSON معتبر نیست.');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file, 'utf-8');
+}
+function openPreview(){
+  document.getElementById('jsonPreviewText').textContent = JSON.stringify(buildExportObject(), null, 2);
+  document.getElementById('previewModal').classList.remove('hidden');
+  document.getElementById('previewModal').classList.add('flex');
+}
+function closePreview(){
+  document.getElementById('previewModal').classList.add('hidden');
+  document.getElementById('previewModal').classList.remove('flex');
+}
+function copyJSON(){
+  navigator.clipboard.writeText(document.getElementById('jsonPreviewText').textContent);
+}
+
+/* ============================================================
+   PUBLISH — encode the exam into a self-contained, working link
+   (no backend/storage: the exam data travels inside the URL hash)
+   ============================================================ */
+function b64EncodeUnicode(str){
+  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (m,p1)=>String.fromCharCode('0x'+p1)));
+}
+function buildShareLink(){
+  const obj = buildExportObject();
+  if(!obj.questions.length){
+    alert('برای انتشار آزمون، حداقل یک سؤال اضافه کنید.');
+    return null;
+  }
+  const encoded = b64EncodeUnicode(JSON.stringify(obj));
+  const base = window.location.href.replace(/dashboard\.html.*$/, '').replace(/[^/]*$/, '');
+  return base + 'exam.html#e=' + encoded;
+}
+function publishExam(){
+  const link = buildShareLink();
+  if(!link) return;
+  document.getElementById('shareLinkInput').value = link;
+  document.getElementById('openExamLink').href = link;
+  const note = document.getElementById('publishModeNote');
+  if(examState.settings.access.mode === 'restricted'){
+    note.textContent = `🔒 دسترسی محدود فعال است — فقط ${toFa(examState.settings.access.allowedIds.length)} کد ثبت‌شده در فهرست مجاز می‌توانند وارد شوند.`;
+  } else {
+    note.textContent = '🔓 دسترسی عمومی است — هرکس این لینک را داشته باشد می‌تواند شرکت کند.';
+  }
+  document.getElementById('publishModal').classList.remove('hidden');
+  document.getElementById('publishModal').classList.add('flex');
+}
+function closePublish(){
+  document.getElementById('publishModal').classList.add('hidden');
+  document.getElementById('publishModal').classList.remove('flex');
+}
+function copyShareLink(){
+  const input = document.getElementById('shareLinkInput');
+  input.select();
+  navigator.clipboard.writeText(input.value);
+}
+
+/* ============================================================
+   ANALYTICS — sample data
+   ============================================================ */
+const sampleResults = [
+  {name:'علی محمدی', nid:'0012345678', score:18, time:29, status:'pass'},
+  {name:'زهرا احمدی', nid:'0023456789', score:9, time:41, status:'fail'},
+  {name:'رضا کریمی', nid:'0034567890', score:15, time:33, status:'pass'},
+  {name:'مریم رضایی', nid:'0045678901', score:19, time:25, status:'pass'},
+  {name:'حسین قاسمی', nid:'0056789012', score:7, time:44, status:'fail'},
+  {name:'فاطمه نوری', nid:'0067890123', score:16, time:30, status:'pass'},
+  {name:'امیر صادقی', nid:'0078901234', score:12, time:38, status:'pass'},
+  {name:'سارا حیدری', nid:'0089012345', score:8, time:45, status:'fail'},
+];
+
+function renderTable(){
+  const q = document.getElementById('searchInput').value.trim();
+  const status = document.getElementById('statusFilter').value;
+  const body = document.getElementById('resultsBody');
+  body.innerHTML = '';
+  sampleResults
+    .filter(r => (status==='all' || r.status===status))
+    .filter(r => !q || r.name.includes(q) || r.nid.includes(q))
+    .forEach(r=>{
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-white/[0.03] transition-colors';
+      tr.innerHTML = `
+        <td class="py-3 px-2 font-medium">${escapeHtml(r.name)}</td>
+        <td class="py-3 px-2 text-white/60 fa-num">${escapeHtml(r.nid)}</td>
+        <td class="py-3 px-2 text-gold font-bold fa-num">${toFa(r.score)}/۲۰</td>
+        <td class="py-3 px-2 text-white/60 fa-num">${toFa(r.time)} دقیقه</td>
+        <td class="py-3 px-2"><span class="status-pill ${r.status==='pass'?'status-pass':'status-fail'}">${r.status==='pass'?'قبول':'مردود'}</span></td>
+        <td class="py-3 px-2">
+          <button onclick="tryReportCard('${r.name}')" class="text-xs ${currentPlan==='free' ? 'text-white/30' : 'text-gold hover:underline'}">
+            ${currentPlan==='free' ? '🔒 کارنامه' : 'مشاهده کارنامه'}
+          </button>
+        </td>
+      `;
+      body.appendChild(tr);
+    });
+}
+function tryReportCard(name){
+  if(currentPlan==='free'){
+    alert('صدور کارنامه فقط در پلن‌های پرداختی فعال است.');
+    return;
+  }
+  alert('کارنامه ' + name + ' آماده‌سازی شد.');
+}
+function exportCSV(){
+  const rows = [['نام','کد ملی','نمره','زمان (دقیقه)','وضعیت'], ...sampleResults.map(r=>[r.name,r.nid,r.score,r.time, r.status==='pass'?'قبول':'مردود'])];
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'exam_results.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+let chartsInitialized = false;
+function initCharts(){
+  if(chartsInitialized) return;
+  chartsInitialized = true;
+  const goldColor = '#E9D0A9';
+  const gridColor = 'rgba(255,255,255,0.06)';
+  const textColor = 'rgba(255,255,255,0.55)';
+
+  new Chart(document.getElementById('scoreChart'), {
+    type:'bar',
+    data:{
+      labels:['۰-۴','۵-۸','۹-۱۲','۱۳-۱۶','۱۷-۲۰'],
+      datasets:[{ label:'تعداد شرکت‌کنندگان', data:[3,9,22,58,56], backgroundColor:goldColor, borderRadius:6, maxBarThickness:46 }]
+    },
+    options:{
+      plugins:{ legend:{display:false} },
+      scales:{
+        x:{ ticks:{color:textColor, font:{family:'Vazirmatn'}}, grid:{color:'transparent'} },
+        y:{ ticks:{color:textColor, font:{family:'Vazirmatn'}}, grid:{color:gridColor} }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('passChart'), {
+    type:'doughnut',
+    data:{
+      labels:['قبول','مردود'],
+      datasets:[{ data:[82,18], backgroundColor:['#E9D0A9','#6b6b6b'], borderWidth:0 }]
+    },
+    options:{
+      cutout:'70%',
+      plugins:{ legend:{position:'bottom', labels:{color:textColor, font:{family:'Vazirmatn'}, padding:16}} }
+    }
+  });
+
+  new Chart(document.getElementById('trendChart'), {
+    type:'line',
+    data:{
+      labels:['شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه'],
+      datasets:[{
+        label:'شرکت‌کنندگان', data:[10,18,26,34,29,22,9],
+        borderColor:goldColor, backgroundColor:'rgba(233,208,169,0.12)',
+        tension:.4, fill:true, pointBackgroundColor:goldColor, pointBorderColor:'#242424', pointRadius:4
+      }]
+    },
+    options:{
+      plugins:{ legend:{display:false} },
+      scales:{
+        x:{ ticks:{color:textColor, font:{family:'Vazirmatn'}}, grid:{color:'transparent'} },
+        y:{ ticks:{color:textColor, font:{family:'Vazirmatn'}}, grid:{color:gridColor} }
+      }
+    }
+  });
+}
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function toFa(n){
+  const fa = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+  return String(n).replace(/\d/g, d=>fa[d]);
+}
+function escapeHtml(str){
+  return String(str||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* init */
+renderQuestions();
+renderTable();
+setAccessMode('public');
+
+/* read plan selected on the landing page, e.g. dashboard.html?plan=paid&users=100 */
+(function initFromQuery(){
+  const params = new URLSearchParams(window.location.search);
+  const planParam = params.get('plan');
+  const usersParam = params.get('users');
+  if(planParam === 'free' || planParam === 'paid'){
+    const users = usersParam === 'custom' ? 'custom' : (usersParam ? Number(usersParam) : undefined);
+    setPlan(planParam, users);
+  }
+})();
+</script>
+</body>
+</html>
