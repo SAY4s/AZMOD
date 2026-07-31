@@ -1,886 +1,511 @@
+
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>آزمون‌چی — دفترچه‌ی آزمون</title>
-<meta name="description" content="آزمون‌چی: دفترچه‌ی واقعی برای ساخت و شرکت در آزمون">
-
-<!--
-  فونت‌ها به‌صورت لوکال سرو می‌شوند (assets/fonts/) نه از CDN گوگل،
-  طبق سابقه‌ی ترجیح شما برای سازگاری آفلاین/VPN. @font-face در فاز ۳ اضافه می‌شود.
--->
-<style>
-/* ================================================================
-   ۱. FONTS — سلف‌هاست (assets/fonts) طبق ترجیح آفلاین/VPN.
-   اگر فایل فونت هنوز آپلود نشده، fallback به فونت سیستم فارسی می‌افتد.
-   ================================================================ */
-@font-face {
-  font-family: 'Vazirmatn';
-  src: url('assets/fonts/Vazirmatn-Regular.woff2') format('woff2');
-  font-weight: 400; font-display: swap;
-}
-@font-face {
-  font-family: 'Vazirmatn';
-  src: url('assets/fonts/Vazirmatn-Medium.woff2') format('woff2');
-  font-weight: 500; font-display: swap;
-}
-@font-face {
-  font-family: 'Lalezar';
-  src: url('assets/fonts/Lalezar-Regular.woff2') format('woff2');
-  font-weight: 400; font-display: swap;
-}
-
-/* ================================================================
-   ۲. TOKENS (سند فاز ۱، بخش ۵) — روشن پیش‌فرض، تاریک در data-theme
-   ================================================================ */
-:root {
-  --paper-cream: #F3E9D2;
-  --paper-cream-back: #EAE0C5;
-  --paper-shadow: #D8C9A3;
-  --wood-desk: #8A6440;
-  --wood-desk-dark: #6B4A32;
-  --ink-dark: #2B2622;
-  --ink-faint: #6B6157;
-  --line-blue: #7C93B8;
-  --margin-red: #B5473F;
-  --stamp-red: #A32E2E;
-  --sticky-yellow: #F0DD8C;
-  --clip-metal: #9AA0A6;
-
-  --font-body: 'Vazirmatn', Tahoma, 'Segoe UI', sans-serif;
-  --font-hand: 'Lalezar', 'Vazirmatn', Tahoma, sans-serif;
-
-  --space-1: 8px; --space-2: 16px; --space-3: 24px;
-  --space-4: 32px; --space-5: 48px; --space-6: 64px;
-
-  --shadow-near: 0 2px 6px rgba(43, 38, 34, 0.28);
-  --shadow-far: 0 18px 40px rgba(43, 38, 34, 0.22);
-  --radius-paper: 2px;
-  --radius-sticky: 6px;
-}
-
-[data-theme="dark"] {
-  --paper-cream: #E4D6AE;
-  --paper-cream-back: #D8C89A;
-  --paper-shadow: #C2AE7C;
-  --wood-desk: #4A3220;
-  --wood-desk-dark: #2E1E13;
-  --ink-dark: #221D19;
-  --ink-faint: #59504A;
-  --shadow-near: 0 2px 8px rgba(0, 0, 0, 0.5);
-  --shadow-far: 0 20px 44px rgba(0, 0, 0, 0.45);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper-cream: #E4D6AE; --paper-cream-back: #D8C89A; --paper-shadow: #C2AE7C;
-    --wood-desk: #4A3220; --wood-desk-dark: #2E1E13; --ink-dark: #221D19;
-    --ink-faint: #59504A; --shadow-near: 0 2px 8px rgba(0,0,0,0.5);
-    --shadow-far: 0 20px 44px rgba(0,0,0,0.45);
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>آزمون چی | ساخت و برگزاری آنلاین آزمون</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          charcoal: { DEFAULT:'#4E4E4E', deep:'#333333', dark:'#242424', panel:'#3A3A3A' },
+          gold: { DEFAULT:'#E9D0A9', light:'#F4E8D3', dim:'#C9AD82' }
+        },
+        fontFamily: { sans: ['Vazirmatn','sans-serif'] }
+      }
+    }
   }
-}
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family:'Vazirmatn', sans-serif; background:#242424; }
 
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; min-height: 100%; }
-[hidden] { display: none !important; }
-.sr-only {
-  position: absolute; width: 1px; height: 1px; overflow: hidden;
-  clip: rect(0 0 0 0); white-space: nowrap;
-}
-:focus-visible { outline: 3px solid var(--margin-red); outline-offset: 2px; }
+  ::selection { background:#E9D0A9; color:#242424; }
 
-/* ================================================================
-   ۳. DESK — زمینه‌ی چوبی، همیشه پشت دفترچه
-   ================================================================ */
-body {
-  font-family: var(--font-body);
-  color: var(--ink-dark);
-}
-.desk {
-  min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  padding: var(--space-4);
-  background:
-    repeating-linear-gradient(90deg, rgba(0,0,0,0.03) 0 2px, transparent 2px 6px),
-    linear-gradient(180deg, var(--wood-desk) 0%, var(--wood-desk-dark) 100%);
-  transition: background 0.4s ease;
-  perspective: 1400px;
-}
+  ::-webkit-scrollbar { width:8px; }
+  ::-webkit-scrollbar-track { background:#242424; }
+  ::-webkit-scrollbar-thumb { background:#4E4E4E; border-radius:8px; }
+  ::-webkit-scrollbar-thumb:hover { background:#E9D0A9; }
 
-.desk-decor { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
-.decor { position: absolute; opacity: 0.85; }
-.decor.pencil {
-  width: 120px; height: 10px; border-radius: 4px;
-  background: linear-gradient(90deg, #D9A441 0 85%, #E8D9C4 85% 92%, #6B6157 92% 100%);
-  bottom: 6%; left: 8%; transform: rotate(-18deg);
-  box-shadow: var(--shadow-near);
-}
-.decor.coffee-cup {
-  width: 46px; height: 46px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff8ec 0%, #e7d3ab 40%, #a9855a 100%);
-  border: 4px solid #efe3c8;
-  top: 8%; right: 6%; box-shadow: var(--shadow-near);
-}
-.decor.eraser {
-  width: 40px; height: 20px; border-radius: 4px;
-  background: linear-gradient(180deg, #e8b6bd, #d98a97);
-  bottom: 10%; right: 10%; transform: rotate(8deg);
-  box-shadow: var(--shadow-near);
-}
-.decor.sticky-note {
-  width: 56px; height: 56px; background: var(--sticky-yellow);
-  top: 12%; left: 6%; transform: rotate(6deg);
-  box-shadow: var(--shadow-near);
-}
+  .fa-num { font-feature-settings: "ss01"; }
 
-.dark-mode-toggle {
-  position: fixed; top: var(--space-2); left: var(--space-2); z-index: 20;
-  width: 40px; height: 40px; border-radius: 50%;
-  border: 2px solid var(--paper-cream); background: var(--wood-desk-dark);
-  cursor: pointer;
-}
+  /* seal / stamp signature element */
+  .seal {
+    position:relative;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .seal svg { display:block; }
 
-/* ================================================================
-   ۴. NOTEBOOK SHELL
-   ================================================================ */
-.notebook {
-  position: relative; z-index: 1;
-  width: min(920px, 94vw);
-  min-height: min(600px, 80vh);
-  transform-style: preserve-3d;
-  transition: transform 0.25s ease-out;
-}
-.notebook-view {
-  display: flex; gap: 2px;
-  min-height: inherit;
-}
-.notebook-view[data-view-name="cover"],
-.notebook-view[data-view-name="quizzes"] {
-  justify-content: center; align-items: center;
-}
-/* فاز ۶/۸: این ویوها یک ستون‌اند (نه ردیف دو-صفحه‌ای)، صرف‌نظر از عرض صفحه */
-.notebook-view[data-view-name="taking"] {
-  flex-direction: column;
-}
-.notebook-view[data-view-name="result"] {
-  flex-direction: column; justify-content: center; align-items: center;
-}
+  .glass {
+    background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015));
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(233,208,169,0.16);
+  }
 
-.notebook-cover {
-  width: 100%; height: min(600px, 80vh);
-  background: var(--wood-desk-dark);
-  border: 6px solid #2b1c10;
-  border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: var(--shadow-far);
-  cursor: pointer;
-}
-.cover-title {
-  font-family: var(--font-hand); font-size: 56px; color: var(--paper-cream);
-  letter-spacing: 2px;
-}
+  .grain {
+    position:absolute; inset:0;
+    background-image: radial-gradient(rgba(233,208,169,0.05) 1px, transparent 1px);
+    background-size: 22px 22px;
+    pointer-events:none;
+  }
 
-/* ================================================================
-   ۵. PAGE — واحد پایه‌ی هر برگه‌ی دفترچه (بافت کاغذ)
-   ================================================================ */
-.page {
-  position: relative;
-  flex: 1 1 0;
-  background:
-    linear-gradient(var(--paper-cream), var(--paper-cream)) padding-box,
-    repeating-linear-gradient(
-      to bottom, transparent 0 27px, var(--line-blue) 27px 28px
-    );
-  background-color: var(--paper-cream);
-  border-radius: var(--radius-paper);
-  padding: var(--space-4) var(--space-3);
-  min-height: min(560px, 76vh);
-  box-shadow: var(--shadow-near), var(--shadow-far);
-  color: var(--ink-dark);
-}
-/* حاشیه‌ی قرمز عمودی سمت راست هر برگه (RTL) */
-.page::before {
-  content: ""; position: absolute; top: 0; bottom: 0; right: 56px;
-  width: 1px; background: var(--margin-red); opacity: 0.55;
-}
-/* گوشه‌ی تاشده */
-.page::after {
-  content: ""; position: absolute; bottom: 0; left: 0;
-  width: 26px; height: 26px;
-  background: linear-gradient(135deg, transparent 50%, var(--paper-shadow) 50%);
-  box-shadow: -2px -2px 4px rgba(43,38,34,0.15);
-}
-.page-left, .page-right, .page-center { display: flex; flex-direction: column; gap: var(--space-2); }
-.page-center { flex: 1 1 100%; align-items: center; text-align: center; }
+  .divider-gold {
+    height:1px;
+    background: linear-gradient(90deg, transparent, #E9D0A9 50%, transparent);
+  }
 
-.logo-mark {
-  width: 64px; height: 64px; border-radius: 50%;
-  background: radial-gradient(circle, var(--margin-red) 0 8px, transparent 9px),
-              var(--sticky-yellow);
-}
-.welcome-text { font-size: 16px; line-height: 1.7; }
-.handwritten-date { font-family: var(--font-hand); font-size: 20px; color: var(--ink-faint); }
-.page-decoration { flex: 1; }
-.page-title { font-family: var(--font-hand); font-size: 28px; margin: 0; }
-.view-header h2 { font-family: var(--font-hand); font-size: 24px; color: var(--paper-cream); }
+  .card-hover {
+    transition: transform .45s cubic-bezier(.2,.8,.2,1), box-shadow .45s ease, border-color .35s ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.55);
+    border-color: rgba(233,208,169,0.55);
+  }
 
-/* ================================================================
-   ۶. STICKY LABEL BUTTON
-   ================================================================ */
-.sticky-label {
-  font-family: var(--font-body); font-weight: 500; font-size: 16px;
-  background: var(--sticky-yellow); color: var(--ink-dark);
-  border: none; border-radius: var(--radius-sticky);
-  padding: var(--space-2) var(--space-3);
-  box-shadow: var(--shadow-near);
-  cursor: pointer;
-  transform: rotate(-1.2deg);
-  transition: transform 0.15s ease;
-  align-self: flex-start;
-}
-.sticky-label:nth-of-type(2) { transform: rotate(1.4deg); }
-.sticky-label:hover { transform: rotate(0deg) translateY(-2px); }
-.sticky-label:active { transform: scale(0.97); }
+  .featured-card {
+    box-shadow: 0 0 0 1px rgba(233,208,169,0.4), 0 40px 90px -25px rgba(233,208,169,0.25);
+  }
 
-/* ================================================================
-   ۷. LOOSE PAPER CARD (لیست آزمون‌های آماده)
-   ================================================================ */
-.loose-papers {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: var(--space-3); width: 100%; padding: var(--space-3);
-}
-.loose-paper {
-  position: relative;
-  background: var(--paper-cream); border-radius: var(--radius-paper);
-  padding: var(--space-2); box-shadow: var(--shadow-near);
-  cursor: pointer;
-}
-.loose-paper:nth-child(3n) { transform: rotate(-3deg); }
-.loose-paper:nth-child(3n+1) { transform: rotate(2deg); }
-.loose-paper:nth-child(3n+2) { transform: rotate(-1.5deg); }
-.loose-paper:hover { transform: rotate(0deg) translateY(-3px); z-index: 2; }
-.paper-clip {
-  position: absolute; top: -10px; right: 12px; width: 22px; height: 34px;
-  border: 4px solid var(--clip-metal); border-radius: 8px 8px 4px 4px;
-  background: transparent;
-}
-.quiz-name { font-size: 16px; margin: var(--space-1) 0; }
-.quiz-meta { display: flex; flex-wrap: wrap; gap: var(--space-1); font-size: 12px; color: var(--ink-faint); margin: 0; }
-.quiz-meta div { display: flex; gap: 4px; }
-.empty-state { color: var(--paper-cream); text-align: center; width: 100%; }
+  .btn-gold {
+    background:#E9D0A9;
+    color:#242424;
+    transition: all .3s cubic-bezier(.2,.8,.2,1);
+  }
+  .btn-gold:hover {
+    background:#F4E8D3;
+    box-shadow: 0 10px 30px -8px rgba(233,208,169,0.55);
+    transform: translateY(-2px);
+  }
 
-/* ================================================================
-   ۸. QUESTION PAGE / OPTIONS / PAGE NAV
-   ================================================================ */
-.page-indicator {
-  display: flex; justify-content: space-between; align-items: center;
-  color: var(--paper-cream); font-family: var(--font-body); font-size: 14px;
-  padding: 0 var(--space-2);
-}
-.question-page { width: 100%; }
-.question-text { font-size: 18px; line-height: 1.8; }
-.options-list { display: flex; flex-direction: column; gap: var(--space-1); }
-.option-item {
-  display: flex; align-items: center; gap: var(--space-1);
-  padding: var(--space-1) var(--space-2);
-  border-bottom: 1px dashed var(--paper-shadow);
-  cursor: pointer;
-}
-.page-nav {
-  display: flex; justify-content: space-between; width: 100%;
-  padding: var(--space-2); margin-top: var(--space-2);
-}
-.page-nav button {
-  font-family: var(--font-body); background: none; border: 1px solid var(--paper-cream);
-  color: var(--paper-cream); padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sticky); cursor: pointer;
-}
+  .btn-outline {
+    border:1px solid rgba(233,208,169,0.4);
+    color:#E9D0A9;
+    transition: all .3s ease;
+  }
+  .btn-outline:hover {
+    background: rgba(233,208,169,0.08);
+    border-color:#E9D0A9;
+  }
 
-/* ================================================================
-   ۹. ENVELOPE / RESULT SHEET
-   ================================================================ */
-.envelope {
-  width: 260px; height: 170px; margin: 0 auto;
-  background: #D9C293; border-radius: 4px; position: relative;
-  box-shadow: var(--shadow-far); cursor: pointer;
-}
-.envelope::before {
-  content: ""; position: absolute; inset: 0;
-  background: linear-gradient(135deg, transparent 49.5%, rgba(0,0,0,0.08) 50%, transparent 50.5%),
-              linear-gradient(-135deg, transparent 49.5%, rgba(0,0,0,0.08) 50%, transparent 50.5%);
-}
-.envelope-seal {
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  width: 46px; height: 46px; border-radius: 50%; background: var(--stamp-red);
-  box-shadow: inset 0 -3px 4px rgba(0,0,0,0.3);
-}
-.envelope-title {
-  position: absolute; bottom: var(--space-1); width: 100%; text-align: center;
-  font-family: var(--font-hand); color: var(--ink-dark); font-size: 18px;
-}
-.result-sheet {
-  background: var(--paper-cream); border-radius: var(--radius-paper);
-  padding: var(--space-3); box-shadow: var(--shadow-near);
-  margin-top: var(--space-3); width: 100%;
-}
-.result-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: var(--space-2); margin: 0; }
-.result-stats dt { font-size: 12px; color: var(--ink-faint); }
-.result-stats dd { font-size: 22px; margin: 0; font-variant-numeric: tabular-nums; }
+  .nav-link { position:relative; }
+  .nav-link::after {
+    content:''; position:absolute; right:0; bottom:-6px; width:0; height:1px; background:#E9D0A9;
+    transition: width .3s ease;
+  }
+  .nav-link:hover::after { width:100%; }
 
-/* ================================================================
-   ۱۰. STAMP (امضای بصری پروژه)
-   ================================================================ */
-.stamp-overlay {
-  position: fixed; inset: 0; z-index: 50;
-  display: flex; align-items: center; justify-content: center;
-  pointer-events: none;
-}
-.stamp {
-  font-family: var(--font-hand); font-size: 28px; color: var(--stamp-red);
-  border: 4px solid var(--stamp-red); border-radius: 8px;
-  padding: var(--space-1) var(--space-3);
-  transform: rotate(-8deg);
-  mix-blend-mode: multiply;
-}
+  @keyframes float {
+    0%,100% { transform: translateY(0px); }
+    50% { transform: translateY(-14px); }
+  }
+  .floaty { animation: float 6s ease-in-out infinite; }
 
-/* ================================================================
-   ۱۱. RESPONSIVE (پیش‌نویس؛ تکمیل در فاز ۶)
-   ================================================================ */
-@media (max-width: 720px) {
-  .notebook-view:not([data-view-name="cover"]) { flex-direction: column; }
-  .page::before { display: none; }
-  .cover-title { font-size: 40px; }
-}
+  @keyframes fadeUp {
+    from { opacity:0; transform: translateY(24px); }
+    to { opacity:1; transform: translateY(0); }
+  }
+  .reveal { animation: fadeUp .9s cubic-bezier(.2,.8,.2,1) both; }
+  .reveal-d1 { animation-delay:.12s; }
+  .reveal-d2 { animation-delay:.24s; }
+  .reveal-d3 { animation-delay:.36s; }
 
-/* ================================================================
-   ۱۲. ANIMATION KEYFRAMES (فاز ۴)
-   ================================================================ */
-@keyframes stampIn {
-  0%   { opacity: 0; transform: scale(1.4) rotate(-8deg); }
-  60%  { opacity: 1; transform: scale(0.9) rotate(-8deg); }
-  100% { opacity: 1; transform: scale(1) rotate(-8deg); }
-}
-.stamp-overlay.show .stamp { animation: stampIn 350ms cubic-bezier(0.34,1.2,0.64,1) forwards; }
+  @media (prefers-reduced-motion: reduce) {
+    .floaty, .reveal { animation: none !important; }
+    .card-hover:hover { transform:none; }
+  }
 
-@keyframes idleSway {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(0.4deg); }
-}
-.page.idle-sway { animation: idleSway 3s ease-in-out; transform-origin: bottom center; }
-
-@media (prefers-reduced-motion: reduce) {
-  .stamp-overlay.show .stamp { animation: none; }
-  .page.idle-sway { animation: none; }
-  .notebook, .page, .sticky-label, .loose-paper, .stamp-button { transition: none !important; }
-}
+  .step-line {
+    background: repeating-linear-gradient(90deg, #E9D0A9 0 8px, transparent 8px 16px);
+    height:1px;
+  }
 </style>
 </head>
-<body>
+<body class="bg-charcoal-dark text-white antialiased">
 
-<!-- ================================================================
-     ریشه‌ی برنامه: میز چوبی. همه‌ی محتوا داخل دفترچه است، بیرون از آن
-     فقط تزئینات ثابت (نوشت‌افزار) قرار دارد — هیچ ناوبری بیرونی وجود ندارد.
-     ================================================================ -->
-<div id="app" class="desk" data-theme="light">
+<!-- ===================== NAVBAR ===================== -->
+<header class="fixed top-0 inset-x-0 z-50">
+  <div class="mx-auto max-w-7xl px-6 lg:px-10">
+    <div class="mt-4 flex items-center justify-between rounded-2xl glass px-5 py-3 shadow-lg shadow-black/20">
+      <a href="#" class="flex items-center gap-2 group">
+        <span class="seal w-9 h-9">
+          <svg viewBox="0 0 60 60" width="36" height="36">
+            <circle cx="30" cy="30" r="27" fill="none" stroke="#E9D0A9" stroke-width="1.4"/>
+            <circle cx="30" cy="30" r="21" fill="none" stroke="#E9D0A9" stroke-width="1"/>
+            <g stroke="#E9D0A9" stroke-width="1">
+              <path d="M30 9 L30 51 M9 30 L51 30" opacity="0.35"/>
+            </g>
+            <path d="M20 32 L27 39 L41 23" fill="none" stroke="#E9D0A9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="text-xl font-extrabold tracking-wide text-gold">آزمون چی</span>
+      </a>
 
-  <!-- نوشت‌افزار پیرامونی: صرفاً اتمسفر، خارج از تعامل کاربر -->
-  <div class="desk-decor" aria-hidden="true">
-    <div class="decor pencil"></div>
-    <div class="decor coffee-cup"></div>
-    <div class="decor eraser"></div>
-    <div class="decor sticky-note"></div>
-  </div>
-
-  <!-- کنترل حالت شب/روز میز (چوب + نور تغییر می‌کند، نه رنگ کاغذ) -->
-  <button id="btn-dark-mode" class="dark-mode-toggle" type="button"
-          aria-pressed="false" aria-label="تغییر حالت شب و روز">
-    <span class="sr-only">تغییر حالت نمایش</span>
-  </button>
-
-  <!-- ============================================================
-       NotebookShell: ظرف اصلی، همیشه در مرکز صفحه.
-       data-view مشخص می‌کند کدام <section> فعال است؛ سوییچ view
-       فقط از طریق موتور ورق‌خوردن (فاز ۴/۵) انجام می‌شود، هرگز با
-       fade/slide ساده.
-       ============================================================ -->
-  <main id="notebook" class="notebook" data-view="cover"
-        role="application" aria-label="دفترچه‌ی آزمون‌چی" aria-live="polite">
-
-    <!-- ---------- View 0: جلد بسته (حالت اولیه بارگذاری) ---------- -->
-    <section id="view-cover" class="notebook-view" data-view-name="cover">
-      <div class="notebook-cover" tabindex="0" role="button"
-           aria-label="باز کردن دفترچه">
-        <h1 class="cover-title">آزمون‌چی</h1>
-      </div>
-    </section>
-
-    <!-- ---------- View 1: خانه ---------- -->
-    <section id="view-home" class="notebook-view" data-view-name="home" hidden>
-      <div class="page page-left" aria-label="صفحه‌ی سمت راست دفترچه">
-        <!-- توجه: در RTL «راست» و «چپ» بصری برعکس نام کلاس منطقی می‌شود؛
-             نام‌گذاری کلاس بر اساس ترتیب منطقی صفحه (اول/دوم) در فاز ۳ نهایی می‌شود -->
-        <div class="logo-mark" aria-hidden="true"></div>
-        <p class="welcome-text">سلام! دفترچه‌ی آزمون‌هایت اینجاست.</p>
-        <p id="handwritten-date" class="handwritten-date" data-component="HandwrittenDate">
-          <!-- JS (jalali-date.js، فاز ۵) تاریخ جلالی امروز را اینجا می‌نویسد -->
-        </p>
-        <div class="page-decoration" aria-hidden="true"></div>
-      </div>
-
-      <div class="page page-right" aria-label="صفحه‌ی انتخاب اصلی">
-        <button class="sticky-label" type="button" data-action="open-create-quiz"
-                data-component="StickyLabelButton">
-          ساخت آزمون
-        </button>
-        <button class="sticky-label" type="button" data-action="open-ready-quizzes"
-                data-component="StickyLabelButton">
-          آزمون‌های آماده
-        </button>
-      </div>
-    </section>
-
-    <!-- ---------- View 2: آزمون‌های آماده (ورق‌های شل) ---------- -->
-    <section id="view-quizzes" class="notebook-view" data-view-name="quizzes" hidden>
-      <header class="view-header">
-        <h2>آزمون‌های آماده</h2>
-      </header>
-      <div id="loose-papers-list" class="loose-papers" aria-label="لیست آزمون‌های موجود">
-        <!-- هر آزمون یک <article> از روی tpl-loose-paper توسط JS (فاز ۵) کلون می‌شود -->
-        <p class="empty-state" data-empty-state hidden>
-          هنوز آزمونی روی این میز نیست.
-        </p>
-      </div>
-    </section>
-
-    <!-- ---------- View 3: آزمون‌دهی ---------- -->
-    <section id="view-quiz-taking" class="notebook-view" data-view-name="taking" hidden>
-      <header class="page-indicator">
-        <span id="page-indicator-text" data-component="PageIndicator">صفحه ۱ از ۱</span>
-        <span id="quiz-timer" data-component="Timer" aria-hidden="true">۰۰:۰۰</span>
-      </header>
-
-      <div id="question-page-container" class="page question-page"
-           data-component="QuestionPage" aria-live="polite">
-        <!-- محتوای سؤال جاری از روی tpl-question-page-view توسط JS جایگزین می‌شود -->
-      </div>
-
-      <nav class="page-nav" aria-label="پیمایش بین صفحات آزمون">
-        <button id="btn-prev-page" type="button" data-action="prev-page">صفحه‌ی قبل</button>
-        <button id="btn-next-page" type="button" data-action="next-page">صفحه‌ی بعد</button>
+      <nav class="hidden md:flex items-center gap-9 text-sm text-white/80">
+        <a href="#features" class="nav-link hover:text-gold">ویژگی‌ها</a>
+        <a href="#pricing" class="nav-link hover:text-gold">قیمت‌ها</a>
+        <a href="#about" class="nav-link hover:text-gold">درباره ما</a>
+        <a href="#contact" class="nav-link hover:text-gold">تماس</a>
       </nav>
-    </section>
 
-    <!-- ---------- View 4: نتیجه (پاکت‌نامه) ---------- -->
-    <section id="view-result" class="notebook-view" data-view-name="result" hidden>
-      <div id="envelope" class="envelope" data-state="closed" data-component="Envelope"
-           role="button" tabindex="0" aria-label="باز کردن پاکت نتیجه‌ی آزمون">
-        <div class="envelope-seal" aria-hidden="true"></div>
-        <span class="envelope-title">نتیجه‌ی آزمون</span>
+      <div class="flex items-center gap-3">
+        <a href="#" class="hidden sm:inline-block text-sm text-white/85 hover:text-gold transition-colors px-3 py-2">ورود</a>
+        <a href="#pricing" class="btn-gold text-sm font-bold px-5 py-2.5 rounded-xl">ساخت آزمون</a>
       </div>
+    </div>
+  </div>
+</header>
 
-      <div id="result-sheet" class="result-sheet" data-component="ResultSheet" hidden>
-        <dl class="result-stats">
-          <div class="stat"><dt>نمره</dt><dd id="result-score">—</dd></div>
-          <div class="stat"><dt>پاسخ درست</dt><dd id="result-correct">—</dd></div>
-          <div class="stat"><dt>پاسخ غلط</dt><dd id="result-wrong">—</dd></div>
-          <div class="stat"><dt>درصد</dt><dd id="result-percent">—</dd></div>
-          <div class="stat"><dt>زمان صرف‌شده</dt><dd id="result-time">—</dd></div>
-        </dl>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- ============================================================
-       مهر سراسری «ذخیره شد / منتشر شد» — روی کل دفترچه شناور می‌شود،
-       امضای بصری پروژه (سند فاز ۱، بخش ۵.۴). توسط JS در لحظه‌ی موفقیت
-       فراخوانی می‌شود، نه یک toast دیجیتال معمولی.
-       ============================================================ -->
-  <div id="stamp-overlay" class="stamp-overlay" hidden aria-live="polite" data-component="StampButton">
-    <div class="stamp" id="stamp-text">ذخیره شد</div>
+<!-- ===================== HERO ===================== -->
+<section class="relative overflow-hidden pt-44 pb-28 px-6">
+  <div class="absolute inset-0 -z-10">
+    <div class="absolute inset-0 bg-gradient-to-b from-charcoal-dark via-[#333333] to-charcoal-dark"></div>
+    <div class="grain"></div>
+    <div class="absolute -top-40 -left-40 w-[32rem] h-[32rem] rounded-full bg-gold/10 blur-[120px]"></div>
+    <div class="absolute -bottom-40 -right-20 w-[28rem] h-[28rem] rounded-full bg-gold/5 blur-[120px]"></div>
   </div>
 
-</div>
+  <div class="mx-auto max-w-7xl grid lg:grid-cols-2 gap-16 items-center">
+    <div class="reveal">
+      <div class="inline-flex items-center gap-2 rounded-full border border-gold/30 px-4 py-1.5 text-xs text-gold/90 mb-7">
+        <span class="w-1.5 h-1.5 rounded-full bg-gold"></span>
+        پلتفرم رسمی ساخت آزمون آنلاین
+      </div>
+      <h1 class="text-4xl sm:text-5xl lg:text-[3.4rem] font-black leading-[1.25] mb-6">
+        ساخت و برگزاری آنلاین آزمون
+        <span class="block text-gold mt-2">در سریع‌ترین زمان</span>
+      </h1>
+      <p class="text-white/70 text-lg leading-8 max-w-xl mb-10">
+        آزمون خودتان را در چند دقیقه طراحی کنید، یک لینک اختصاصی برای شرکت‌کنندگان بسازید و نتایج را به‌صورت زنده و دقیق دریافت کنید؛ بدون نیاز به نصب یا دانش فنی.
+      </p>
+      <div class="flex flex-wrap items-center gap-4">
+        <a href="#pricing" class="btn-gold font-bold px-8 py-4 rounded-2xl text-base">شروع رایگان</a>
+        <a href="#how" class="btn-outline font-semibold px-8 py-4 rounded-2xl text-base">مشاهده روند کار</a>
+      </div>
 
-<!-- ================================================================
-     Templates: قالب‌های تکرارشونده که JS (فاز ۵) از آن‌ها clone می‌کند.
-     نگه‌داشتن آن‌ها در <template> یعنی در بارگذاری اولیه رندر نمی‌شوند
-     و در stream/parse صفحه هزینه‌ای ندارند.
-     ================================================================ -->
-<template id="tpl-loose-paper">
-  <article class="loose-paper" data-component="LoosePaperCard" tabindex="0" role="button">
-    <div class="paper-clip" aria-hidden="true"></div>
-    <h3 class="quiz-name"></h3>
-    <dl class="quiz-meta">
-      <div><dt>تعداد سؤال</dt><dd class="quiz-question-count"></dd></div>
-      <div><dt>زمان</dt><dd class="quiz-time"></dd></div>
-      <div><dt>سطح</dt><dd class="quiz-difficulty"></dd></div>
-      <div><dt>سازنده</dt><dd class="quiz-creator"></dd></div>
-    </dl>
-  </article>
-</template>
+      <div class="flex items-center gap-8 mt-12 text-white/50 text-sm">
+        <div><span class="text-gold text-xl font-extrabold fa-num">+۱۲۰۰</span> آزمون فعال</div>
+        <div class="w-px h-8 bg-white/10"></div>
+        <div><span class="text-gold text-xl font-extrabold fa-num">۹۹.۹٪</span> پایداری سرویس</div>
+      </div>
+    </div>
 
-<template id="tpl-question-page-view">
-  <div class="question-body">
-    <p class="question-text"></p>
-    <div class="options-list" role="radiogroup"></div>
+    <div class="relative reveal reveal-d2">
+      <div class="absolute -top-8 -right-8 w-24 h-24 seal floaty opacity-90">
+        <svg viewBox="0 0 60 60">
+          <circle cx="30" cy="30" r="27" fill="none" stroke="#E9D0A9" stroke-width="1.2"/>
+          <circle cx="30" cy="30" r="21" fill="none" stroke="#E9D0A9" stroke-width="0.8"/>
+          <text x="30" y="34" text-anchor="middle" fill="#E9D0A9" font-size="9" font-family="Vazirmatn" font-weight="700">تایید شده</text>
+        </svg>
+      </div>
+
+      <div class="glass rounded-3xl p-7 shadow-2xl shadow-black/40 floaty">
+        <div class="flex items-center justify-between mb-6">
+          <span class="text-sm text-white/60">پیش‌نمایش ساخت آزمون</span>
+          <div class="flex gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-gold/70"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-white/20"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-white/20"></span>
+          </div>
+        </div>
+
+        <div class="rounded-2xl bg-black/25 border border-white/10 p-5 mb-4">
+          <p class="text-sm text-white/50 mb-2">عنوان آزمون</p>
+          <p class="font-bold text-lg mb-4">آزمون میان‌ترم ریاضی — نوبت اول</p>
+          <div class="divider-gold mb-4"></div>
+          <div class="space-y-3 text-sm">
+            <div class="flex items-center justify-between text-white/70">
+              <span>تعداد سؤالات</span><span class="text-gold font-bold fa-num">۲۰</span>
+            </div>
+            <div class="flex items-center justify-between text-white/70">
+              <span>مدت زمان</span><span class="text-gold font-bold fa-num">۴۵ دقیقه</span>
+            </div>
+            <div class="flex items-center justify-between text-white/70">
+              <span>شرکت‌کنندگان</span><span class="text-gold font-bold fa-num">۳۲ نفر</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl bg-gold/10 border border-gold/25 p-4 flex items-center justify-between">
+          <span class="text-xs text-white/60 truncate">azmoonchi.com/e/x82f-r19</span>
+          <span class="text-xs font-bold text-gold">کپی لینک</span>
+        </div>
+      </div>
+    </div>
   </div>
-</template>
+</section>
 
-<template id="tpl-option-item">
-  <label class="option-item">
-    <input type="radio" name="current-question">
-    <span class="option-label"></span>
-  </label>
-</template>
+<!-- ===================== HOW IT WORKS ===================== -->
+<section id="how" class="relative py-28 px-6 bg-charcoal">
+  <div class="mx-auto max-w-6xl">
+    <div class="text-center mb-16">
+      <span class="text-gold/80 text-sm tracking-widest">مسیر ساده و سریع</span>
+      <h2 class="text-3xl sm:text-4xl font-black mt-3">چگونه کار می‌کند</h2>
+    </div>
 
-<!-- ================================================================
-     PHASE 5 — JAVASCRIPT (به همین ترتیب داخل این بلوک تک‌فایلی قرار می‌گیرد)
-       1. jalali-date.js      → تاریخ جلالی امروز برای HandwrittenDate
-       2. github-read-client.js → fetch فقط-خواندنی data/quizzes/*.json
-                                    (بدون توکن؛ این مخزن عمومی است)
-       3. notebook-shell.js   → state machine بین ویوها + تیلت با موس
-       4. page-turn.js        → موتور انیمیشن ورق‌خوردن (سند فاز ۱، بخش ۷.۱)
-       5. quiz-taker.js       → منطق پاسخ‌دهی، تایمر، محاسبه‌ی نتیجه
-       6. result-envelope.js  → باز شدن پاکت + پر کردن ResultSheet
-       7. idle-effects.js     → وزش هوا بعد از بی‌تعاملی (بخش ۷.۲)
-       8. app.js              → bootstrap: خواندن querystring/localStorage
-                                    برای نتایج محلی، اتصال event listenerها
-     ================================================================ -->
-<script>
-/* ================================================================
-   CONFIG — این سه مقدار را با نام واقعی مخزن خودتان تطبیق دهید
-   ================================================================ */
-const REPO_OWNER = 'SAY4s';
-const REPO_NAME = 'azmoonchi';
-const BRANCH = 'main';
-const RAW_BASE = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}`;
+    <div class="grid md:grid-cols-3 gap-8 relative">
+      <div class="hidden md:block absolute top-10 right-[16%] left-[16%] step-line"></div>
 
-/* ================================================================
-   ۱. jalali-date.js — تاریخ جلالی امروز (بدون کتابخانه‌ی خارجی)
-   ================================================================ */
-function toJalali(gy, gm, gd) {
-  const g_d_m = [0,31,59,90,120,151,181,212,243,273,304,334];
-  let jy = (gy <= 1600) ? 0 : 979;
-  gy -= (gy <= 1600) ? 621 : 1600;
-  const gy2 = (gm > 2) ? (gy + 1) : gy;
-  let days = (365 * gy) + Math.floor((gy2 + 3) / 4) - Math.floor((gy2 + 99) / 100)
-    + Math.floor((gy2 + 399) / 400) - 80 + gd + g_d_m[gm - 1];
-  jy += 33 * Math.floor(days / 12053);
-  days %= 12053;
-  jy += 4 * Math.floor(days / 1461);
-  days %= 1461;
-  jy += Math.floor((days - 1) / 365);
-  if (days > 365) days = (days - 1) % 365;
-  const jm = (days < 186) ? 1 + Math.floor(days / 31) : 7 + Math.floor((days - 186) / 30);
-  const jd = 1 + ((days < 186) ? (days % 31) : ((days - 186) % 30));
-  return [jy, jm, jd];
-}
-const JALALI_MONTHS = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
-const FA_DIGITS = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
-function toFaDigits(n) { return String(n).replace(/[0-9]/g, (d) => FA_DIGITS[d]); }
-function jalaliTodayText() {
-  const now = new Date();
-  const [jy, jm, jd] = toJalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
-  return `امروز ${toFaDigits(jd)} ${JALALI_MONTHS[jm - 1]} ${toFaDigits(jy)} است`;
-}
+      <div class="relative glass rounded-2xl p-8 text-center card-hover">
+        <div class="w-16 h-16 mx-auto mb-6 rounded-full border border-gold/40 flex items-center justify-center bg-charcoal-dark">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#E9D0A9" stroke-width="1.6"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+        </div>
+        <h3 class="font-bold text-lg mb-3">ساخت آزمون</h3>
+        <p class="text-white/60 text-sm leading-7">سؤالات خود را با ویرایشگر ساده و بدون نیاز به کدنویسی طراحی کنید.</p>
+      </div>
 
-/* ================================================================
-   ۲. github-read-client.js — فقط‌خواندنی، بدون توکن (مخزن عمومی)
-   ================================================================ */
-async function fetchQuizIndex() {
-  const res = await fetch(`${RAW_BASE}/data/quizzes/index.json?_=${Date.now()}`);
-  if (!res.ok) return [];
-  return res.json().catch(() => []);
-}
-async function fetchQuizById(id) {
-  const res = await fetch(`${RAW_BASE}/data/quizzes/${id}.json?_=${Date.now()}`);
-  if (!res.ok) throw new Error('آزمون یافت نشد');
-  return res.json();
-}
+      <div class="relative glass rounded-2xl p-8 text-center card-hover">
+        <div class="w-16 h-16 mx-auto mb-6 rounded-full border border-gold/40 flex items-center justify-center bg-charcoal-dark">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#E9D0A9" stroke-width="1.6"><path d="M8.5 10.5 15.5 6.5M8.5 13.5l7 4" stroke-linecap="round"/><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="18" cy="18" r="2.4"/></svg>
+        </div>
+        <h3 class="font-bold text-lg mb-3">اشتراک‌گذاری لینک</h3>
+        <p class="text-white/60 text-sm leading-7">یک لینک اختصاصی بسازید و برای شرکت‌کنندگان ارسال کنید.</p>
+      </div>
 
-/* ================================================================
-   ۳. notebook-shell.js — state machine بین ویوها + تیلت با موس
-   ================================================================ */
-const notebook = document.getElementById('notebook');
-const appRoot = document.getElementById('app');
+      <div class="relative glass rounded-2xl p-8 text-center card-hover">
+        <div class="w-16 h-16 mx-auto mb-6 rounded-full border border-gold/40 flex items-center justify-center bg-charcoal-dark">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#E9D0A9" stroke-width="1.6"><path d="M4 19V9M11 19V5M18 19v-7" stroke-linecap="round"/></svg>
+        </div>
+        <h3 class="font-bold text-lg mb-3">دریافت نتایج</h3>
+        <p class="text-white/60 text-sm leading-7">نتایج و تحلیل عملکرد شرکت‌کنندگان را به‌صورت لحظه‌ای مشاهده کنید.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-function currentViewEl() {
-  return notebook.querySelector('.notebook-view:not([hidden])');
-}
-function viewEl(name) {
-  return notebook.querySelector(`.notebook-view[data-view-name="${name}"]`);
-}
+<!-- ===================== FEATURES ===================== -->
+<section id="features" class="py-28 px-6">
+  <div class="mx-auto max-w-6xl">
+    <div class="text-center mb-16">
+      <span class="text-gold/80 text-sm tracking-widest">امکانات</span>
+      <h2 class="text-3xl sm:text-4xl font-black mt-3">ابزارهایی برای برگزاری آزمونی حرفه‌ای</h2>
+    </div>
 
-/* ---- page-turn.js: موتور انیمیشن ورق‌خوردن (بخش ۷.۱ سند فاز ۱) ---- */
-function prefersReducedMotion() {
-  return matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-function pageTurn(outEl, inEl) {
-  return new Promise((resolve) => {
-    if (!outEl || prefersReducedMotion()) {
-      if (outEl) outEl.hidden = true;
-      inEl.hidden = false;
-      resolve();
-      return;
-    }
-    const dur = 650;
-    outEl.style.transformOrigin = 'left center';
-    const outAnim = outEl.animate([
-      { transform: 'rotateY(0deg)' },
-      { transform: 'rotateY(-100deg)' }
-    ], { duration: dur * 0.55, easing: 'cubic-bezier(0.34,1.2,0.64,1)', fill: 'forwards' });
-    outAnim.onfinish = () => {
-      outEl.hidden = true;
-      outEl.style.transform = '';
-      inEl.hidden = false;
-      inEl.style.transformOrigin = 'left center';
-      const inAnim = inEl.animate([
-        { transform: 'rotateY(100deg)', opacity: 0.85 },
-        { transform: 'rotateY(0deg)', opacity: 1 }
-      ], { duration: dur * 0.45, easing: 'cubic-bezier(0.34,1.2,0.64,1)', fill: 'forwards' });
-      inAnim.onfinish = () => { inEl.style.transform = ''; resolve(); };
-    };
-  });
-}
-/* فلیپ محتوای داخلی یک صفحه (برای رفتن بین سؤالات، بدون تعویض کل ویو) */
-function flipContent(containerEl, renderFn) {
-  return new Promise((resolve) => {
-    if (prefersReducedMotion()) { renderFn(); resolve(); return; }
-    containerEl.style.transformOrigin = 'left center';
-    const out = containerEl.animate([
-      { transform: 'rotateY(0deg)' }, { transform: 'rotateY(-95deg)' }
-    ], { duration: 280, easing: 'cubic-bezier(0.34,1.2,0.64,1)', fill: 'forwards' });
-    out.onfinish = () => {
-      renderFn();
-      const inAnim = containerEl.animate([
-        { transform: 'rotateY(95deg)' }, { transform: 'rotateY(0deg)' }
-      ], { duration: 280, easing: 'cubic-bezier(0.34,1.2,0.64,1)', fill: 'forwards' });
-      inAnim.onfinish = () => { containerEl.style.transform = ''; resolve(); };
-    };
-  });
-}
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="glass rounded-2xl p-7 card-hover">
+        <div class="w-11 h-11 rounded-xl bg-gold/15 flex items-center justify-center mb-5">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E9D0A9" stroke-width="1.7"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h5"/></svg>
+        </div>
+        <h3 class="font-bold mb-2">طراحی آسان سؤالات</h3>
+        <p class="text-white/60 text-sm leading-7">افزودن سؤالات تستی، تشریحی و چندگزینه‌ای در چند کلیک.</p>
+      </div>
+      <div class="glass rounded-2xl p-7 card-hover">
+        <div class="w-11 h-11 rounded-xl bg-gold/15 flex items-center justify-center mb-5">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E9D0A9" stroke-width="1.7"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg>
+        </div>
+        <h3 class="font-bold mb-2">امنیت و یکتایی لینک</h3>
+        <p class="text-white/60 text-sm leading-7">هر آزمون یک لینک منحصربه‌فرد و قابل کنترل توسط شما دارد.</p>
+      </div>
+      <div class="glass rounded-2xl p-7 card-hover">
+        <div class="w-11 h-11 rounded-xl bg-gold/15 flex items-center justify-center mb-5">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E9D0A9" stroke-width="1.7"><path d="M4 19V9M11 19V5M18 19v-7"/></svg>
+        </div>
+        <h3 class="font-bold mb-2">گزارش و تحلیل دقیق</h3>
+        <p class="text-white/60 text-sm leading-7">نمودار عملکرد شرکت‌کنندگان و کارنامه‌ی قابل چاپ.</p>
+      </div>
+      <div class="glass rounded-2xl p-7 card-hover">
+        <div class="w-11 h-11 rounded-xl bg-gold/15 flex items-center justify-center mb-5">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E9D0A9" stroke-width="1.7"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>
+        </div>
+        <h3 class="font-bold mb-2">زمان‌بندی هوشمند</h3>
+        <p class="text-white/60 text-sm leading-7">تعیین مدت‌زمان و بازه‌ی مجاز شرکت در آزمون.</p>
+      </div>
+      <div class="glass rounded-2xl p-7 card-hover">
+        <div class="w-11 h-11 rounded-xl bg-gold/15 flex items-center justify-center mb-5">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E9D0A9" stroke-width="1.7"><path d="M17 20h4v-2a4 4 0 0 0-3-3.87M7 20H3v-2a4 4 0 0 1 3-3.87M12 14a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>
+        </div>
+        <h3 class="font-bold mb-2">مدیریت شرکت‌کنندگان</h3>
+        <p class="text-white/60 text-sm leading-7">کنترل کامل بر ظرفیت و دسترسی افراد به آزمون.</p>
+      </div>
+      <div class="glass rounded-2xl p-7 card-hover">
+        <div class="w-11 h-11 rounded-xl bg-gold/15 flex items-center justify-center mb-5">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E9D0A9" stroke-width="1.7"><path d="M4 4h16v16H4zM4 9h16M9 4v16"/></svg>
+        </div>
+        <h3 class="font-bold mb-2">قالب‌های آماده</h3>
+        <p class="text-white/60 text-sm leading-7">شروع سریع با طرح‌های از پیش آماده‌شده.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-async function switchView(name) {
-  const out = currentViewEl();
-  const inEl = viewEl(name);
-  if (!inEl || out === inEl) return;
-  notebook.dataset.view = name;
-  await pageTurn(out, inEl);
-  onViewEntered(name);
-}
+<!-- ===================== PRICING ===================== -->
+<section id="pricing" class="py-28 px-6 bg-charcoal relative">
+  <div class="mx-auto max-w-7xl">
+    <div class="text-center mb-16">
+      <span class="text-gold/80 text-sm tracking-widest">تعرفه‌ها</span>
+      <h2 class="text-3xl sm:text-4xl font-black mt-3">پلنی مناسب برای هر تیم</h2>
+      <p class="text-white/60 mt-3 max-w-xl mx-auto">بر اساس تعداد شرکت‌کنندگان در هر آزمون، پلن خود را انتخاب کنید.</p>
+    </div>
 
-/* تیلت ملایم دفترچه با حرکت موس (lerp برای نرمی) */
-let targetTiltX = 0, targetTiltY = 0, curTiltX = 0, curTiltY = 0;
-document.addEventListener('pointermove', (e) => {
-  if (prefersReducedMotion()) return;
-  const nx = (e.clientX / window.innerWidth - 0.5) * 2;
-  const ny = (e.clientY / window.innerHeight - 0.5) * 2;
-  targetTiltY = nx * 2; targetTiltX = -ny * 2;
-});
-function tiltLoop() {
-  curTiltX += (targetTiltX - curTiltX) * 0.06;
-  curTiltY += (targetTiltY - curTiltY) * 0.06;
-  notebook.style.transform = `rotateX(${curTiltX}deg) rotateY(${curTiltY}deg)`;
-  requestAnimationFrame(tiltLoop);
-}
-requestAnimationFrame(tiltLoop);
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 items-stretch">
 
-/* ---- idle-effects.js: وزش هوای ملایم بعد از بی‌تعاملی ---- */
-let lastInteraction = Date.now();
-['pointermove', 'keydown', 'click'].forEach((evt) =>
-  document.addEventListener(evt, () => { lastInteraction = Date.now(); })
-);
-setInterval(() => {
-  if (prefersReducedMotion()) return;
-  if (Date.now() - lastInteraction > 8000) {
-    const page = notebook.querySelector('.notebook-view:not([hidden]) .page');
-    if (page && !page.classList.contains('idle-sway')) {
-      page.classList.add('idle-sway');
-      page.addEventListener('animationend', () => page.classList.remove('idle-sway'), { once: true });
-      lastInteraction = Date.now();
-    }
-  }
-}, 1000);
+      <!-- 3 users -->
+      <div class="glass rounded-2xl p-6 flex flex-col card-hover">
+        <p class="text-white/60 text-sm mb-1">۳ کاربر</p>
+        <p class="text-2xl font-black mb-1">رایگان</p>
+        <p class="text-gold text-sm mb-6 fa-num">۰ تومان</p>
+        <ul class="text-white/60 text-xs space-y-2 mb-6 flex-1">
+          <li>امکانات پایه</li>
+          <li>یک آزمون فعال</li>
+        </ul>
+        <a href="#" class="btn-outline text-center text-sm font-bold py-2.5 rounded-xl">شروع</a>
+      </div>
 
-/* ---- StampButton: مهر سراسری ---- */
-const stampOverlay = document.getElementById('stamp-overlay');
-const stampText = document.getElementById('stamp-text');
-function showStamp(text) {
-  stampText.textContent = text;
-  stampOverlay.hidden = false;
-  stampOverlay.classList.add('show');
-  setTimeout(() => { stampOverlay.classList.remove('show'); stampOverlay.hidden = true; }, 1200);
-}
+      <!-- 5 users -->
+      <div class="glass rounded-2xl p-6 flex flex-col card-hover">
+        <p class="text-white/60 text-sm mb-1">۵ کاربر</p>
+        <p class="text-2xl font-black mb-1 fa-num">۴۹,۰۰۰</p>
+        <p class="text-gold text-sm mb-6 fa-num">تومان · ۲٪ تخفیف</p>
+        <ul class="text-white/60 text-xs space-y-2 mb-6 flex-1">
+          <li>گزارش‌گیری ساده</li>
+          <li>پشتیبانی ایمیلی</li>
+        </ul>
+        <a href="#" class="btn-outline text-center text-sm font-bold py-2.5 rounded-xl">انتخاب</a>
+      </div>
 
-/* ---- Dark mode toggle (ترجیح ظاهری صرف، حساس نیست، در localStorage) ---- */
-const darkBtn = document.getElementById('btn-dark-mode');
-function applyTheme(theme) {
-  appRoot.dataset.theme = theme;
-  darkBtn.setAttribute('aria-pressed', String(theme === 'dark'));
-}
-applyTheme(localStorage.getItem('azmoonchi-theme') || 'light');
-darkBtn.addEventListener('click', () => {
-  const next = appRoot.dataset.theme === 'dark' ? 'light' : 'dark';
-  applyTheme(next);
-  localStorage.setItem('azmoonchi-theme', next);
-});
+      <!-- 10 users -->
+      <div class="glass rounded-2xl p-6 flex flex-col card-hover">
+        <p class="text-white/60 text-sm mb-1">۱۰ کاربر</p>
+        <p class="text-2xl font-black mb-1 fa-num">۸۹,۰۰۰</p>
+        <p class="text-gold text-sm mb-6 fa-num">تومان · ۱۱٪ تخفیف</p>
+        <ul class="text-white/60 text-xs space-y-2 mb-6 flex-1">
+          <li>تحلیل نتایج</li>
+          <li>پشتیبانی اولویت‌دار</li>
+        </ul>
+        <a href="#" class="btn-outline text-center text-sm font-bold py-2.5 rounded-xl">انتخاب</a>
+      </div>
 
-/* ================================================================
-   ۴. quiz-taker.js — فلوی آزمون‌دهی
-   ================================================================ */
-const state = { quiz: null, index: 0, answers: {}, startedAt: null, timerId: null };
+      <!-- 30 users -->
+      <div class="glass rounded-2xl p-6 flex flex-col card-hover">
+        <p class="text-white/60 text-sm mb-1">۳۰ کاربر</p>
+        <p class="text-2xl font-black mb-1 fa-num">۲۵۰,۰۰۰</p>
+        <p class="text-gold text-sm mb-6 fa-num">تومان · ۱۷٪ تخفیف</p>
+        <ul class="text-white/60 text-xs space-y-2 mb-6 flex-1">
+          <li>کارنامه‌ی قابل چاپ</li>
+          <li>چند آزمون هم‌زمان</li>
+        </ul>
+        <a href="#" class="btn-outline text-center text-sm font-bold py-2.5 rounded-xl">انتخاب</a>
+      </div>
 
-async function loadQuizzesList() {
-  const list = document.getElementById('loose-papers-list');
-  const emptyState = list.querySelector('[data-empty-state]');
-  list.querySelectorAll('.loose-paper').forEach((el) => el.remove());
-  const quizzes = await fetchQuizIndex();
-  if (!quizzes.length) { emptyState.hidden = false; return; }
-  emptyState.hidden = true;
-  const tpl = document.getElementById('tpl-loose-paper');
-  quizzes.forEach((q) => {
-    const node = tpl.content.cloneNode(true);
-    const article = node.querySelector('.loose-paper');
-    article.querySelector('.quiz-name').textContent = q.name;
-    article.querySelector('.quiz-question-count').textContent = toFaDigits(q.questionCount) + ' سؤال';
-    article.querySelector('.quiz-time').textContent = toFaDigits(q.time) + ' دقیقه';
-    article.querySelector('.quiz-difficulty').textContent = q.difficulty || 'متوسط';
-    article.querySelector('.quiz-creator').textContent = q.creator || 'ادمین';
-    article.addEventListener('click', () => startQuiz(q.id));
-    article.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') startQuiz(q.id); });
-    list.appendChild(article);
-  });
-}
+      <!-- 100 users - FEATURED -->
+      <div class="relative rounded-2xl p-7 flex flex-col bg-gradient-to-b from-[#4a4030] to-charcoal-dark border-2 border-gold featured-card card-hover sm:col-span-2 lg:col-span-1 lg:-translate-y-4 xl:col-span-2 order-first xl:order-none">
+        <div class="absolute -top-4 right-1/2 translate-x-1/2 flex items-center gap-1.5 bg-gold text-charcoal-dark text-xs font-black px-4 py-1.5 rounded-full whitespace-nowrap shadow-lg">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="#242424"><path d="M12 2l2.9 6.3L22 9l-5 5 1.3 7-6.3-3.6L5.7 21 7 14 2 9l7.1-.7z"/></svg>
+          پیشنهاد ویژه / محبوب‌ترین
+        </div>
+        <p class="text-white/70 text-sm mt-3 mb-1">۱۰۰ کاربر</p>
+        <p class="text-3xl font-black mb-1 text-gold fa-num">۵۹۹,۰۰۰</p>
+        <p class="text-gold/80 text-sm mb-6 fa-num">تومان · ۴۰٪ تخفیف</p>
+        <ul class="text-white/75 text-xs space-y-2.5 mb-8 flex-1">
+          <li class="flex items-center gap-2"><span class="text-gold">✓</span> همه‌ی امکانات پیشرفته</li>
+          <li class="flex items-center gap-2"><span class="text-gold">✓</span> تحلیل و آمار کامل</li>
+          <li class="flex items-center gap-2"><span class="text-gold">✓</span> کارنامه و خروجی PDF</li>
+          <li class="flex items-center gap-2"><span class="text-gold">✓</span> پشتیبانی اختصاصی</li>
+        </ul>
+        <a href="#" class="btn-gold text-center text-sm font-black py-3.5 rounded-xl">همین حالا شروع کن</a>
+      </div>
 
-async function startQuiz(id) {
-  try {
-    state.quiz = await fetchQuizById(id);
-    state.index = 0;
-    state.answers = {};
-    state.startedAt = Date.now();
-    await switchView('taking');
-    renderQuestion();
-    startTimer();
-  } catch (e) {
-    alert(e.message);
-  }
-}
+      <!-- 50 users -->
+      <div class="glass rounded-2xl p-6 flex flex-col card-hover">
+        <p class="text-white/60 text-sm mb-1">۵۰ کاربر</p>
+        <p class="text-2xl font-black mb-1 fa-num">۳۹۹,۰۰۰</p>
+        <p class="text-gold text-sm mb-6 fa-num">تومان · ۲۰٪ تخفیف</p>
+        <ul class="text-white/60 text-xs space-y-2 mb-6 flex-1">
+          <li>پشتیبانی تلفنی</li>
+          <li>گزارش گروهی</li>
+        </ul>
+        <a href="#" class="btn-outline text-center text-sm font-bold py-2.5 rounded-xl">انتخاب</a>
+      </div>
 
-function startTimer() {
-  clearInterval(state.timerId);
-  const timerEl = document.getElementById('quiz-timer');
-  state.timerId = setInterval(() => {
-    const secs = Math.floor((Date.now() - state.startedAt) / 1000);
-    const mm = String(Math.floor(secs / 60)).padStart(2, '0');
-    const ss = String(secs % 60).padStart(2, '0');
-    timerEl.textContent = toFaDigits(mm) + ':' + toFaDigits(ss);
-  }, 1000);
-}
+    </div>
 
-function renderQuestion() {
-  const container = document.getElementById('question-page-container');
-  const q = state.quiz.questions[state.index];
-  const doRender = () => {
-    const tpl = document.getElementById('tpl-question-page-view');
-    container.innerHTML = '';
-    const node = tpl.content.cloneNode(true);
-    node.querySelector('.question-text').textContent = q.text;
-    const optList = node.querySelector('.options-list');
-    const optTpl = document.getElementById('tpl-option-item');
-    q.options.forEach((opt, i) => {
-      const optNode = optTpl.content.cloneNode(true);
-      const input = optNode.querySelector('input');
-      input.value = i;
-      input.checked = state.answers[state.index] === i;
-      input.addEventListener('change', () => { state.answers[state.index] = i; });
-      optNode.querySelector('.option-label').textContent = opt.text;
-      optList.appendChild(optNode);
-    });
-    container.appendChild(node);
-  };
-  flipContent(container, doRender);
-  document.getElementById('page-indicator-text').textContent =
-    `صفحه ${toFaDigits(state.index + 1)} از ${toFaDigits(state.quiz.questions.length)}`;
-  document.getElementById('btn-prev-page').disabled = state.index === 0;
-}
+    <!-- enterprise -->
+    <div class="mt-8 glass rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div>
+        <p class="font-bold text-lg mb-1">کاربر سفارشی</p>
+        <p class="text-white/60 text-sm">برای سازمان‌ها و مؤسسات با نیاز به تعداد بالای شرکت‌کننده — <span class="text-gold">توافقی</span></p>
+      </div>
+      <a href="#contact" class="btn-outline font-bold px-8 py-3 rounded-xl whitespace-nowrap">درخواست مشاوره</a>
+    </div>
+  </div>
+</section>
 
-document.getElementById('btn-prev-page').addEventListener('click', () => {
-  if (state.index > 0) { state.index--; renderQuestion(); }
-});
-document.getElementById('btn-next-page').addEventListener('click', () => {
-  if (state.index < state.quiz.questions.length - 1) {
-    state.index++; renderQuestion();
-  } else {
-    finishQuiz();
-  }
-});
+<!-- ===================== ABOUT ===================== -->
+<section id="about" class="py-28 px-6">
+  <div class="mx-auto max-w-5xl text-center">
+    <span class="text-gold/80 text-sm tracking-widest">درباره ما</span>
+    <h2 class="text-3xl sm:text-4xl font-black mt-3 mb-6">آزمون چی، شریک برگزاری آزمون‌های حرفه‌ای</h2>
+    <p class="text-white/65 leading-8 max-w-2xl mx-auto">
+      ما به آموزشگاه‌ها، مدرسه‌ها و سازمان‌ها کمک می‌کنیم تا بدون دغدغه‌ی فنی، آزمون‌های استاندارد و قابل اعتماد برگزار کنند. تمرکز ما بر سادگی، دقت و ظاهری رسمی و حرفه‌ای است.
+    </p>
+  </div>
+</section>
 
-function finishQuiz() {
-  clearInterval(state.timerId);
-  const total = state.quiz.questions.length;
-  let correct = 0;
-  state.quiz.questions.forEach((q, i) => {
-    const chosen = state.answers[i];
-    if (chosen !== undefined && q.options[chosen] && q.options[chosen].correct) correct++;
-  });
-  const wrong = total - correct;
-  const percent = Math.round((correct / total) * 100);
-  const secs = Math.floor((Date.now() - state.startedAt) / 1000);
-  const mm = String(Math.floor(secs / 60)).padStart(2, '0');
-  const ss = String(secs % 60).padStart(2, '0');
+<!-- ===================== CTA STRIP ===================== -->
+<section class="px-6 pb-28">
+  <div class="mx-auto max-w-6xl rounded-3xl glass p-12 text-center relative overflow-hidden">
+    <div class="absolute inset-0 grain"></div>
+    <h3 class="text-2xl sm:text-3xl font-black mb-4">آماده‌اید اولین آزمون خود را بسازید؟</h3>
+    <p class="text-white/60 mb-8">در کمتر از پنج دقیقه، آزمون شما آماده‌ی اشتراک‌گذاری است.</p>
+    <a href="#pricing" class="btn-gold font-bold px-9 py-4 rounded-2xl inline-block">شروع رایگان</a>
+  </div>
+</section>
 
-  document.getElementById('result-score').textContent = toFaDigits(correct) + ' از ' + toFaDigits(total);
-  document.getElementById('result-correct').textContent = toFaDigits(correct);
-  document.getElementById('result-wrong').textContent = toFaDigits(wrong);
-  document.getElementById('result-percent').textContent = toFaDigits(percent) + '٪';
-  document.getElementById('result-time').textContent = toFaDigits(mm) + ':' + toFaDigits(ss);
+<!-- ===================== FOOTER ===================== -->
+<footer id="contact" class="border-t border-white/10 pt-16 pb-8 px-6 bg-charcoal-dark">
+  <div class="mx-auto max-w-7xl grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+    <div>
+      <div class="flex items-center gap-2 mb-4">
+        <span class="seal w-8 h-8">
+          <svg viewBox="0 0 60 60" width="30" height="30">
+            <circle cx="30" cy="30" r="27" fill="none" stroke="#E9D0A9" stroke-width="1.4"/>
+            <path d="M20 32 L27 39 L41 23" fill="none" stroke="#E9D0A9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="font-extrabold text-gold">آزمون چی</span>
+      </div>
+      <p class="text-white/50 text-sm leading-7">پلتفرم ساخت و برگزاری آنلاین آزمون با امنیت و دقت بالا.</p>
+    </div>
 
-  document.getElementById('envelope').dataset.state = 'closed';
-  document.getElementById('result-sheet').hidden = true;
-  switchView('result');
-}
+    <div>
+      <p class="font-bold mb-4 text-sm">دسترسی سریع</p>
+      <ul class="space-y-3 text-sm text-white/55">
+        <li><a href="#features" class="hover:text-gold transition-colors">ویژگی‌ها</a></li>
+        <li><a href="#pricing" class="hover:text-gold transition-colors">قیمت‌ها</a></li>
+        <li><a href="#about" class="hover:text-gold transition-colors">درباره ما</a></li>
+      </ul>
+    </div>
 
-/* ---- result-envelope.js ---- */
-const envelope = document.getElementById('envelope');
-function openEnvelope() {
-  if (envelope.dataset.state === 'open') return;
-  envelope.dataset.state = 'open';
-  const sheet = document.getElementById('result-sheet');
-  sheet.hidden = false;
-  if (!prefersReducedMotion()) {
-    sheet.animate(
-      [{ transform: 'translateY(-24px)', opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }],
-      { duration: 500, easing: 'cubic-bezier(0.22,1,0.36,1)' }
-    );
-  }
-}
-envelope.addEventListener('click', openEnvelope);
-envelope.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') openEnvelope(); });
+    <div>
+      <p class="font-bold mb-4 text-sm">پشتیبانی</p>
+      <ul class="space-y-3 text-sm text-white/55">
+        <li><a href="#" class="hover:text-gold transition-colors">مرکز راهنما</a></li>
+        <li><a href="#" class="hover:text-gold transition-colors">قوانین و مقررات</a></li>
+        <li><a href="#" class="hover:text-gold transition-colors">حریم خصوصی</a></li>
+      </ul>
+    </div>
 
-/* ================================================================
-   ۵. app.js — bootstrap + اتصال اکشن‌های عمومی
-   ================================================================ */
-document.querySelectorAll('[data-action]').forEach((el) => {
-  el.addEventListener('click', () => {
-    const action = el.dataset.action;
-    if (action === 'open-create-quiz') {
-      alert('ساخت آزمون فقط از پنل ادمین (azmoonchi-admin) در دسترس است.');
-    }
-    if (action === 'open-ready-quizzes') { switchView('quizzes'); }
-  });
-});
-function onViewEntered(name) {
-  if (name === 'quizzes') loadQuizzesList();
-}
-document.getElementById('view-cover').querySelector('.notebook-cover')
-  .addEventListener('click', () => switchView('home'));
-document.getElementById('view-cover').querySelector('.notebook-cover')
-  .addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') switchView('home'); });
+    <div>
+      <p class="font-bold mb-4 text-sm">تماس با ما</p>
+      <ul class="space-y-3 text-sm text-white/55">
+        <li>info@azmoonchi.com</li>
+        <li class="fa-num">۰۲۱-۹۱۰۰۰۰۰۰</li>
+        <li>تهران، ایران</li>
+      </ul>
+    </div>
+  </div>
 
-document.getElementById('handwritten-date').textContent = jalaliTodayText();
-</script>
+  <div class="divider-gold mb-6"></div>
+  <p class="text-center text-white/40 text-xs fa-num">© ۱۴۰۳ آزمون چی — تمامی حقوق محفوظ است.</p>
+</footer>
 
 </body>
 </html>
