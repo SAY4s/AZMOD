@@ -127,7 +127,11 @@
     </a>
 
     <nav class="flex flex-col gap-1 text-sm">
-      <button data-tab="builder" class="tabnav flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 text-gold font-bold">
+      <button data-tab="myexams" class="tabnav flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 text-gold font-bold">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4h16v16H4zM4 9h16M9 4v16"/></svg>
+        آزمون‌های من
+      </button>
+      <button data-tab="builder" class="tabnav flex items-center gap-3 px-4 py-3 rounded-xl text-white/70 hover:bg-white/5 hover:text-gold transition-colors">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
         ساخت آزمون
       </button>
@@ -138,6 +142,10 @@
       <button data-tab="analytics" class="tabnav flex items-center gap-3 px-4 py-3 rounded-xl text-white/70 hover:bg-white/5 hover:text-gold transition-colors">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V9M11 19V5M18 19v-7"/></svg>
         تحلیل و نتایج
+      </button>
+      <button data-tab="admin" id="adminNavBtn" class="hidden tabnav flex items-center gap-3 px-4 py-3 rounded-xl text-white/70 hover:bg-white/5 hover:text-gold transition-colors">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+        پنل مدیریت
       </button>
     </nav>
 
@@ -152,15 +160,11 @@
       </div>
       <div class="glass rounded-xl p-4 mb-4">
         <p class="text-xs text-white/50 mb-2">پلن فعال</p>
-        <div class="flex items-center justify-between mb-3">
-          <span id="planLabel" class="font-bold text-gold text-sm">رایگان (۳ کاربر)</span>
+        <div class="flex items-center justify-between mb-2">
+          <span id="planLabel" class="font-bold text-gold text-sm">در حال بارگذاری...</span>
           <span id="planIcon" class="text-lg">🔓</span>
         </div>
-        <div class="flex gap-2">
-          <button onclick="setPlan('free')" class="flex-1 text-xs py-1.5 rounded-lg border border-white/15 hover:border-gold/50 transition-colors">رایگان</button>
-          <button onclick="setPlan('paid')" class="flex-1 text-xs py-1.5 rounded-lg border border-white/15 hover:border-gold/50 transition-colors">پرداختی</button>
-        </div>
-        <p class="text-[11px] text-white/40 mt-2 leading-5">جهت نمایش قفل امکانات بر اساس پلن، جابه‌جا کنید.</p>
+        <p class="text-[11px] text-white/40 leading-5">پلن شما توسط مدیریت سایت تعیین می‌شود. برای تغییر پلن با پشتیبانی تماس بگیرید.</p>
       </div>
       <p class="text-[11px] text-white/30 text-center">© ۱۴۰۳ آزمون چی</p>
     </div>
@@ -174,10 +178,12 @@
       <div class="flex items-center justify-between px-5 lg:px-9 py-4">
         <div class="flex items-center gap-4 min-w-0">
           <!-- mobile tabs -->
-          <div class="flex lg:hidden gap-1 text-xs">
-            <button data-tab="builder" class="tabnav px-3 py-2 rounded-lg bg-white/5 text-gold font-bold">ساخت</button>
-            <button data-tab="access" class="tabnav px-3 py-2 rounded-lg text-white/70">دسترسی</button>
-            <button data-tab="analytics" class="tabnav px-3 py-2 rounded-lg text-white/70">تحلیل</button>
+          <div class="flex lg:hidden gap-1 text-xs overflow-x-auto">
+            <button data-tab="myexams" class="tabnav px-3 py-2 rounded-lg bg-white/5 text-gold font-bold whitespace-nowrap">آزمون‌های من</button>
+            <button data-tab="builder" class="tabnav px-3 py-2 rounded-lg text-white/70 whitespace-nowrap">ساخت</button>
+            <button data-tab="access" class="tabnav px-3 py-2 rounded-lg text-white/70 whitespace-nowrap">دسترسی</button>
+            <button data-tab="analytics" class="tabnav px-3 py-2 rounded-lg text-white/70 whitespace-nowrap">تحلیل</button>
+            <button data-tab="admin" id="adminNavBtnMobile" class="hidden tabnav px-3 py-2 rounded-lg text-white/70 whitespace-nowrap">مدیریت</button>
           </div>
           <div class="hidden lg:block min-w-0">
             <p class="text-white/45 text-xs">داشبورد مدیریت</p>
@@ -186,6 +192,10 @@
         </div>
 
         <div class="flex items-center gap-2 shrink-0">
+          <button onclick="startNewExam()" class="btn-outline text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 rounded-xl flex items-center gap-1.5">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+            <span class="hidden sm:inline">آزمون جدید</span>
+          </button>
           <input type="file" id="jsonImportInput" accept=".json" class="hidden" onchange="importJSON(event)">
           <button onclick="document.getElementById('jsonImportInput').click()" class="btn-outline text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 rounded-xl flex items-center gap-1.5">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M5 21h14" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -206,8 +216,27 @@
 
     <main class="p-5 lg:p-9 max-w-[1400px] mx-auto">
 
+      <!-- ================= VIEW: MY EXAMS ================= -->
+      <section id="view-myexams" class="view active">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="font-bold text-lg">آزمون‌های من</h3>
+          <button onclick="startNewExam()" class="btn-gold text-sm font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+            آزمون جدید
+          </button>
+        </div>
+
+        <div id="myExamsEmpty" class="hidden glass rounded-2xl p-10 text-center text-white/45 text-sm">
+          هنوز هیچ آزمونی نساخته‌اید. با «آزمون جدید» شروع کنید.
+        </div>
+        <div id="myExamsLoading" class="glass rounded-2xl p-10 text-center text-white/45 text-sm">
+          در حال بارگذاری آزمون‌های شما...
+        </div>
+        <div id="myExamsList" class="space-y-3"></div>
+      </section>
+
       <!-- ================= VIEW: BUILDER ================= -->
-      <section id="view-builder" class="view active">
+      <section id="view-builder" class="view">
 
         <div class="grid xl:grid-cols-3 gap-6">
           <!-- exam meta -->
@@ -433,6 +462,34 @@
         </div>
       </section>
 
+      <!-- ================= VIEW: ADMIN ================= -->
+      <section id="view-admin" class="view">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="font-bold text-lg flex items-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E9D0A9" stroke-width="1.8"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/></svg>
+            پنل مدیریت — تعیین پلن کاربران
+          </h3>
+          <button onclick="loadAllUsers()" class="btn-outline text-xs font-bold px-4 py-2 rounded-lg">بروزرسانی</button>
+        </div>
+
+        <div id="adminLoading" class="glass rounded-2xl p-10 text-center text-white/45 text-sm">در حال بارگذاری کاربران...</div>
+        <div id="adminEmpty" class="hidden glass rounded-2xl p-10 text-center text-white/45 text-sm">کاربری یافت نشد.</div>
+
+        <div class="glass rounded-2xl p-5 overflow-x-auto scrollbar-thin">
+          <table id="adminTable" class="hidden w-full text-sm min-w-[640px]">
+            <thead>
+              <tr class="text-white/45 text-xs border-b border-white/10">
+                <th class="text-right font-medium py-3 px-2">ایمیل کاربر</th>
+                <th class="text-right font-medium py-3 px-2">پلن فعلی</th>
+                <th class="text-right font-medium py-3 px-2">تغییر پلن</th>
+                <th class="text-right font-medium py-3 px-2">عملیات</th>
+              </tr>
+            </thead>
+            <tbody id="adminUsersBody" class="divide-y divide-white/5"></tbody>
+          </table>
+        </div>
+      </section>
+
     </main>
   </div>
 </div>
@@ -533,41 +590,9 @@ examState.questions.push(Object.assign(newQuestion(), {
 }));
 
 /* ============================================================
-   TAB NAVIGATION
+   PLAN LOGIC (report-card gating uses currentPlan, set for real by
+   applyProfilePlan() from the user's Firestore profile — see below)
    ============================================================ */
-document.querySelectorAll('.tabnav').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const tab = btn.dataset.tab;
-    document.querySelectorAll('.tabnav').forEach(b=>{
-      b.classList.remove('active','bg-white/5','text-gold','font-bold');
-      b.classList.add('text-white/70');
-    });
-    document.querySelectorAll(`[data-tab="${tab}"]`).forEach(b=>{
-      b.classList.add('active','bg-white/5','text-gold','font-bold');
-      b.classList.remove('text-white/70');
-    });
-    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-    document.getElementById('view-'+tab).classList.add('active');
-    if(tab==='analytics') requestAnimationFrame(initCharts);
-  });
-});
-
-/* ============================================================
-   PLAN LOGIC
-   ============================================================ */
-function setPlan(p, users){
-  currentPlan = p;
-  examState.plan.tier = p;
-  const u = users || (p === 'free' ? 3 : 100);
-  examState.plan.userLimit = u;
-  document.getElementById('planLabel').textContent = p==='free'
-    ? `رایگان (${toFa(3)} کاربر)`
-    : (u==='custom' ? 'پرداختی (کاربر سفارشی)' : `پرداختی (${toFa(u)} کاربر)`);
-  document.getElementById('planIcon').textContent = p==='free' ? '🔓' : '⭐';
-  renderQuestions();
-  refreshBulkReportBtn();
-  if(typeof renderKPIsAndCharts === 'function' && chartsInitialized) renderKPIsAndCharts();
-}
 function refreshBulkReportBtn(){
   const btn = document.getElementById('bulkReportBtn');
   if(currentPlan === 'free'){
@@ -797,24 +822,15 @@ function copyJSON(){
 }
 
 /* ============================================================
-   PUBLISH — encode the exam into a self-contained, working link
-   (no backend/storage: the exam data travels inside the URL hash)
+   PUBLISH — the full exam (questions + settings) is saved to
+   Firestore under examState.examId. The link only ever contains
+   the examId, so editing and republishing an exam NEVER changes
+   its link — the same link always reflects the latest content.
    ============================================================ */
-function b64EncodeUnicode(str){
-  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (m,p1)=>String.fromCharCode('0x'+p1)));
-}
-function buildShareLink(){
-  const obj = buildExportObject();
-  if(!obj.questions.length){
-    alert('برای انتشار آزمون، حداقل یک سؤال اضافه کنید.');
-    return null;
-  }
-  const encoded = encodeURIComponent(b64EncodeUnicode(JSON.stringify(obj)));
-  // strip any existing query string / hash, then cut everything after the last "/"
-  // this works no matter what this file is named or what folder it's hosted in
+function buildLinkForExamId(examId){
   const cleanHref = window.location.href.split('#')[0].split('?')[0];
   const dir = cleanHref.substring(0, cleanHref.lastIndexOf('/') + 1);
-  return dir + 'exam.html#e=' + encoded;
+  return dir + 'exam.html?id=' + encodeURIComponent(examId);
 }
 function numericUserLimit(){
   const u = examState.plan.userLimit;
@@ -824,8 +840,11 @@ function numericUserLimit(){
 }
 
 async function publishExam(){
-  const link = buildShareLink();
-  if(!link) return;
+  const obj = buildExportObject();
+  if(!obj.questions.length){
+    alert('برای انتشار آزمون، حداقل یک سؤال اضافه کنید.');
+    return;
+  }
 
   const btn = document.getElementById('publishBtn');
   if(btn){ btn.disabled = true; btn.innerHTML = '<span>در حال انتشار...</span>'; }
@@ -834,22 +853,28 @@ async function publishExam(){
   try{
     const examRef = db.collection('exams').doc(examState.examId);
     const snap = await examRef.get();
+    const payload = {
+      ownerUid: currentUser.uid,
+      title: examState.title,
+      description: examState.description,
+      settings: obj.settings,
+      questions: obj.questions,
+      userLimit: limit,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
     if(!snap.exists){
-      await examRef.set({
-        title: examState.title,
-        ownerUid: currentUser.uid,
-        userLimit: limit,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        participantCount: 0
-      });
-    } else {
-      await examRef.update({ title: examState.title, userLimit: limit });
+      payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      payload.participantCount = 0;
     }
+    await examRef.set(payload, { merge: true });
   }catch(err){
     console.error('publish firestore error', err);
-    alert('انتشار آزمون با خطا مواجه شد (احتمالاً به دلیل قطعی اتصال به Firebase). لینک همچنان کار می‌کند اما محدودیت ظرفیت شرکت‌کنندگان ممکن است اعمال نشود.');
+    alert('انتشار آزمون با خطا مواجه شد (احتمالاً به دلیل قطعی اتصال به Firebase). لطفاً دوباره تلاش کنید.');
+    if(btn){ btn.disabled = false; btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 10.5 15.5 6.5M8.5 13.5l7 4" stroke-linecap="round"/><circle cx="6" cy="12" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="18" cy="18" r="2.2"/></svg><span>انتشار آزمون</span>'; }
+    return;
   }
 
+  const link = buildLinkForExamId(examState.examId);
   if(btn){ btn.disabled = false; btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 10.5 15.5 6.5M8.5 13.5l7 4" stroke-linecap="round"/><circle cx="6" cy="12" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="18" cy="18" r="2.2"/></svg><span>انتشار آزمون</span>'; }
 
   document.getElementById('shareLinkInput').value = link;
@@ -858,10 +883,11 @@ async function publishExam(){
   const accessNote = examState.settings.access.mode === 'restricted'
     ? `🔒 دسترسی محدود فعال است — فقط ${toFa(examState.settings.access.allowedIds.length)} کد ثبت‌شده در فهرست مجاز می‌توانند وارد شوند.`
     : '🔓 دسترسی عمومی است — هرکس این لینک را داشته باشد می‌تواند وارد شود.';
-  note.textContent = accessNote + ` ظرفیت این آزمون بر اساس پلن فعلی، حداکثر ${toFa(limit)} شرکت‌کننده است.`;
+  note.textContent = accessNote + ` ظرفیت این آزمون بر اساس پلن فعلی، حداکثر ${toFa(limit)} شرکت‌کننده است. این لینک ثابت است — با ویرایش و انتشار دوباره تغییر نمی‌کند.`;
   document.getElementById('publishModal').classList.remove('hidden');
   document.getElementById('publishModal').classList.add('flex');
   startResultsListener();
+  loadMyExams();
 }
 function closePublish(){
   document.getElementById('publishModal').classList.add('hidden');
@@ -872,6 +898,7 @@ function copyShareLink(){
   input.select();
   navigator.clipboard.writeText(input.value);
 }
+
 
 /* ============================================================
    ANALYTICS — real data, live from Firestore
@@ -1062,21 +1089,228 @@ function escapeHtml(str){
 }
 
 /* ============================================================
-   INIT — runs only after we've confirmed the user is dashboard content
+   INIT — runs only after we've confirmed the user is logged in
    ============================================================ */
 function initDashboard(){
-  renderQuestions();
   renderTable();
   setAccessMode('public');
-  startResultsListener();
+  startNewExam(); // start on a fresh blank draft; "My Exams" tab lists saved ones
+  switchTab('myexams');
+}
 
-  /* read plan selected on the landing page, e.g. dashboard.html?plan=paid&users=100 */
-  const params = new URLSearchParams(window.location.search);
-  const planParam = params.get('plan');
-  const usersParam = params.get('users');
-  if(planParam === 'free' || planParam === 'paid'){
-    const users = usersParam === 'custom' ? 'custom' : (usersParam ? Number(usersParam) : undefined);
-    setPlan(planParam, users);
+/* ============================================================
+   TAB SWITCHING (also callable programmatically, not just via clicks)
+   ============================================================ */
+function switchTab(tab){
+  document.querySelectorAll('.tabnav').forEach(b=>{
+    const active = b.dataset.tab === tab;
+    b.classList.toggle('bg-white/5', active);
+    b.classList.toggle('text-gold', active);
+    b.classList.toggle('font-bold', active);
+    b.classList.toggle('text-white/70', !active);
+  });
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const view = document.getElementById('view-'+tab);
+  if(view) view.classList.add('active');
+  if(tab==='analytics') requestAnimationFrame(initCharts);
+  if(tab==='myexams') loadMyExams();
+  if(tab==='admin') loadAllUsers();
+}
+document.querySelectorAll('.tabnav').forEach(btn=>{
+  btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
+});
+
+/* ============================================================
+   MY EXAMS — saved exams live in Firestore under the owner's uid;
+   editing/republishing an exam always reuses the same examId & link
+   ============================================================ */
+function copyExamLink(examId){
+  const link = buildLinkForExamId(examId);
+  navigator.clipboard.writeText(link);
+  alert('لینک این آزمون کپی شد:\n' + link);
+}
+
+let myExamsUnsub = null;
+function loadMyExams(){
+  if(!db || !currentUser) return;
+  document.getElementById('myExamsLoading').classList.remove('hidden');
+  document.getElementById('myExamsEmpty').classList.add('hidden');
+  if(myExamsUnsub){ myExamsUnsub(); myExamsUnsub = null; }
+  myExamsUnsub = db.collection('exams').where('ownerUid','==',currentUser.uid)
+    .onSnapshot(snap=>{
+      document.getElementById('myExamsLoading').classList.add('hidden');
+      const list = document.getElementById('myExamsList');
+      list.innerHTML = '';
+      if(snap.empty){
+        document.getElementById('myExamsEmpty').classList.remove('hidden');
+        return;
+      }
+      document.getElementById('myExamsEmpty').classList.add('hidden');
+      const docs = snap.docs.slice().sort((a,b)=>{
+        const ta = a.data().updatedAt?.toMillis ? a.data().updatedAt.toMillis() : 0;
+        const tb = b.data().updatedAt?.toMillis ? b.data().updatedAt.toMillis() : 0;
+        return tb - ta;
+      });
+      docs.forEach(docSnap=>{
+        const d = docSnap.data();
+        const examId = docSnap.id;
+        const qCount = (d.questions||[]).length;
+        const card = document.createElement('div');
+        card.className = 'glass rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4';
+        card.innerHTML = `
+          <div class="min-w-0">
+            <p class="font-bold text-sm truncate mb-1">${escapeHtml(d.title||'بدون عنوان')}</p>
+            <p class="text-xs text-white/45 fa-num">${toFa(qCount)} سؤال · ${toFa(d.participantCount||0)} شرکت‌کننده از ${toFa(d.userLimit ?? '—')} ظرفیت</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <button onclick="openExamForEdit('${examId}')" class="btn-outline text-xs font-bold px-3 py-2 rounded-lg">ویرایش</button>
+            <button onclick="viewResultsFor('${examId}')" class="btn-outline text-xs font-bold px-3 py-2 rounded-lg">نتایج</button>
+            <button onclick="copyExamLink('${examId}')" class="btn-outline text-xs font-bold px-3 py-2 rounded-lg">کپی لینک</button>
+            <button onclick="deleteExam('${examId}')" class="text-xs font-bold px-3 py-2 rounded-lg text-red-300/70 hover:text-red-300 hover:bg-red-400/10 transition-colors">حذف</button>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }, err=>{
+      console.warn('loadMyExams error', err);
+      document.getElementById('myExamsLoading').classList.add('hidden');
+    });
+}
+
+async function loadExamIntoState(examId){
+  try{
+    const snap = await db.collection('exams').doc(examId).get();
+    if(!snap.exists){ alert('این آزمون یافت نشد یا حذف شده است.'); return false; }
+    const d = snap.data();
+    examState.examId = examId;
+    examState.title = d.title || '';
+    examState.description = d.description || '';
+    examState.settings.timeLimitMinutes = d.settings?.timeLimitMinutes ?? 45;
+    examState.settings.shuffleQuestions = d.settings?.shuffleQuestions ?? true;
+    examState.settings.resultDisplay = d.settings?.resultDisplay || 'scoreOnly';
+    examState.settings.access.mode = d.settings?.access?.mode || 'public';
+    examState.settings.access.allowedIds = d.settings?.access?.allowedIds || [];
+    examState.questions = (d.questions||[]).map(q=>({
+      id: q.id || ('q'+(++qIdSeed)), type: q.type||'single', text: q.text||'', image: q.image||null,
+      options: (q.options||[]).map(o=>({ id:o.id||('o'+(++oIdSeed)), text:o.text||'', image:o.image||null, isCorrect:!!o.isCorrect }))
+    }));
+    document.getElementById('examTitle').value = examState.title;
+    document.getElementById('examTitleMirror').value = examState.title;
+    document.getElementById('allowedIdsBox').value = examState.settings.access.allowedIds.join('\n');
+    document.querySelector(`input[name="accessMode"][value="${examState.settings.access.mode}"]`).checked = true;
+    setAccessMode(examState.settings.access.mode);
+    document.querySelector(`input[name="resultDisplay"][value="${examState.settings.resultDisplay}"]`).checked = true;
+    parseAllowedIds();
+    renderQuestions();
+    startResultsListener();
+    return true;
+  }catch(err){
+    console.error(err);
+    alert('بارگذاری آزمون با خطا مواجه شد (اتصال اینترنت را بررسی کنید).');
+    return false;
+  }
+}
+async function openExamForEdit(examId){
+  const ok = await loadExamIntoState(examId);
+  if(ok) switchTab('builder');
+}
+async function viewResultsFor(examId){
+  const ok = await loadExamIntoState(examId);
+  if(ok) switchTab('analytics');
+}
+async function deleteExam(examId){
+  if(!confirm('آیا از حذف این آزمون مطمئن هستید؟ لینک آن دیگر کار نخواهد کرد و این عمل قابل بازگشت نیست.')) return;
+  try{
+    await db.collection('exams').doc(examId).delete();
+    if(examState.examId === examId) startNewExam();
+  }catch(err){
+    alert('حذف با خطا مواجه شد.');
+  }
+}
+function startNewExam(){
+  qIdSeed = 0; oIdSeed = 0;
+  examState.examId = 'exam_' + Math.random().toString(36).slice(2,10);
+  examState.title = 'آزمون جدید';
+  examState.description = '';
+  examState.settings.timeLimitMinutes = 45;
+  examState.settings.shuffleQuestions = true;
+  examState.settings.resultDisplay = 'scoreOnly';
+  examState.settings.access.mode = 'public';
+  examState.settings.access.allowedIds = [];
+  examState.questions = [ newQuestion() ];
+  liveResults = [];
+  if(resultsUnsub){ resultsUnsub(); resultsUnsub = null; }
+  document.getElementById('examTitle').value = examState.title;
+  document.getElementById('examTitleMirror').value = examState.title;
+  document.getElementById('allowedIdsBox').value = '';
+  const publicRadio = document.querySelector('input[name="accessMode"][value="public"]');
+  if(publicRadio) publicRadio.checked = true;
+  setAccessMode('public');
+  const scoreOnlyRadio = document.querySelector('input[name="resultDisplay"][value="scoreOnly"]');
+  if(scoreOnlyRadio) scoreOnlyRadio.checked = true;
+  renderQuestions();
+}
+
+/* ============================================================
+   ADMIN PANEL — visible only to the admin account; sets each
+   user's plan (userLimit) which exam.html enforces in real time
+   ============================================================ */
+const ADMIN_EMAIL = 'say4admin@azmoonchi.ir';
+
+async function loadAllUsers(){
+  if(!db) return;
+  document.getElementById('adminLoading').classList.remove('hidden');
+  document.getElementById('adminTable').classList.add('hidden');
+  document.getElementById('adminEmpty').classList.add('hidden');
+  try{
+    const snap = await db.collection('users').orderBy('email').get();
+    document.getElementById('adminLoading').classList.add('hidden');
+    if(snap.empty){
+      document.getElementById('adminEmpty').classList.remove('hidden');
+      return;
+    }
+    const body = document.getElementById('adminUsersBody');
+    body.innerHTML = '';
+    const tiers = [3,5,10,30,50,100];
+    snap.forEach(docSnap=>{
+      const uid = docSnap.id;
+      const d = docSnap.data();
+      const currentVal = d.userLimit ?? 3;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="py-3 px-2">${escapeHtml(d.email||uid)}</td>
+        <td class="py-3 px-2 text-gold fa-num">${(d.planTier==='paid') ? 'پرداختی' : 'رایگان'} (${toFa(currentVal)} کاربر)</td>
+        <td class="py-3 px-2">
+          <select id="planSel-${uid}" class="rounded-lg px-2 py-1.5 text-xs">
+            ${tiers.map(n=>`<option value="${n}" ${currentVal===n?'selected':''}>${toFa(n)} کاربر</option>`).join('')}
+            <option value="custom" ${currentVal==='custom'?'selected':''}>سفارشی</option>
+          </select>
+        </td>
+        <td class="py-3 px-2">
+          <button onclick="saveUserPlan('${uid}')" class="btn-outline text-xs font-bold px-3 py-1.5 rounded-lg">ذخیره</button>
+        </td>
+      `;
+      body.appendChild(tr);
+    });
+    document.getElementById('adminTable').classList.remove('hidden');
+  }catch(err){
+    console.error('loadAllUsers error', err);
+    document.getElementById('adminLoading').classList.add('hidden');
+    document.getElementById('adminEmpty').classList.remove('hidden');
+    document.getElementById('adminEmpty').textContent = 'خطا در بارگذاری فهرست کاربران (دسترسی ادمین یا اتصال اینترنت را بررسی کنید).';
+  }
+}
+async function saveUserPlan(uid){
+  const sel = document.getElementById('planSel-'+uid);
+  const val = sel.value;
+  const userLimit = val === 'custom' ? 'custom' : Number(val);
+  const planTier = (val === '3') ? 'free' : 'paid';
+  try{
+    await db.collection('users').doc(uid).update({ userLimit, planTier });
+    alert('پلن کاربر با موفقیت بروزرسانی شد.');
+    loadAllUsers();
+  }catch(err){
+    alert('ذخیره با خطا مواجه شد (دسترسی ادمین را بررسی کنید).');
   }
 }
 
@@ -1094,13 +1328,49 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let currentUser = null;
+let myProfile = { planTier:'free', userLimit:3 };
 
 function loginRedirectUrl(){
-  const qs = window.location.search; // preserve ?plan=...&users=... through the login flow
-  return 'login.html' + qs;
+  return 'login.html';
 }
 
-firebase.auth().onAuthStateChanged(user=>{
+function applyProfilePlan(profile){
+  currentPlan = profile.planTier || 'free';
+  examState.plan.tier = currentPlan;
+  examState.plan.userLimit = profile.userLimit ?? 3;
+  document.getElementById('planLabel').textContent = currentPlan==='free'
+    ? `رایگان (${toFa(profile.userLimit ?? 3)} کاربر)`
+    : (profile.userLimit==='custom' ? 'پرداختی (کاربر سفارشی)' : `پرداختی (${toFa(profile.userLimit)} کاربر)`);
+  document.getElementById('planIcon').textContent = currentPlan==='free' ? '🔓' : '⭐';
+  renderQuestions();
+  refreshBulkReportBtn();
+}
+
+async function ensureUserProfile(user){
+  const ref = db.collection('users').doc(user.uid);
+  try{
+    const snap = await ref.get();
+    if(!snap.exists){
+      const initial = { email:user.email||'', planTier:'free', userLimit:3, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+      await ref.set(initial);
+      myProfile = { planTier:'free', userLimit:3 };
+    }else{
+      const d = snap.data();
+      myProfile = { planTier: d.planTier||'free', userLimit: d.userLimit ?? 3 };
+    }
+  }catch(err){
+    console.warn('could not load profile (offline?)', err);
+    myProfile = { planTier:'free', userLimit:3 };
+  }
+  applyProfilePlan(myProfile);
+  const isAdmin = (user.email === ADMIN_EMAIL);
+  const adminBtn = document.getElementById('adminNavBtn');
+  const adminBtnMobile = document.getElementById('adminNavBtnMobile');
+  if(adminBtn) adminBtn.classList.toggle('hidden', !isAdmin);
+  if(adminBtnMobile) adminBtnMobile.classList.toggle('hidden', !isAdmin);
+}
+
+firebase.auth().onAuthStateChanged(async user=>{
   if(!user){
     window.location.href = loginRedirectUrl();
     return;
@@ -1109,6 +1379,7 @@ firebase.auth().onAuthStateChanged(user=>{
   document.getElementById('userEmailLabel').textContent = user.displayName || user.email || 'کاربر';
   document.getElementById('authGate').classList.add('hidden');
   document.getElementById('dashboardApp').classList.remove('hidden');
+  await ensureUserProfile(user);
   initDashboard();
 });
 
