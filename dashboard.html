@@ -10,6 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
   tailwind.config = {
     theme: {
@@ -195,7 +196,7 @@
             <span class="hidden sm:inline">خروجی JSON</span>
           </button>
           <button onclick="openPreview()" class="btn-outline text-xs sm:text-sm font-bold px-4 py-2 rounded-xl">پیش‌نمایش JSON</button>
-          <button onclick="publishExam()" class="btn-gold text-xs sm:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5">
+          <button id="publishBtn" onclick="publishExam()" class="btn-gold text-xs sm:text-sm font-bold px-4 py-2 rounded-xl flex items-center gap-1.5">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 10.5 15.5 6.5M8.5 13.5l7 4" stroke-linecap="round"/><circle cx="6" cy="12" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="18" cy="18" r="2.2"/></svg>
             <span>انتشار آزمون</span>
           </button>
@@ -351,27 +352,31 @@
       <!-- ================= VIEW: ANALYTICS ================= -->
       <section id="view-analytics" class="view">
 
+        <div id="analyticsEmptyNote" class="hidden glass rounded-2xl p-6 mb-6 text-center text-sm text-white/55">
+          هنوز این آزمون منتشر نشده یا شرکت‌کننده‌ای ثبت نشده است. برای دیدن آمار واقعی، ابتدا از تب «ساخت آزمون» روی «انتشار آزمون» بزنید و لینک را با شرکت‌کنندگان به اشتراک بگذارید.
+        </div>
+
         <!-- KPIs -->
         <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
           <div class="glass rounded-2xl p-5">
             <p class="text-xs text-white/50 mb-2">کل شرکت‌کنندگان</p>
-            <p class="text-3xl font-black text-gold fa-num">۱۴۸</p>
-            <p class="text-[11px] text-emerald-400/80 mt-1 fa-num">▲ ۱۲٪ نسبت به آزمون قبلی</p>
+            <p class="text-3xl font-black text-gold fa-num" id="kpiTotal">۰</p>
+            <p class="text-[11px] text-white/40 mt-1" id="kpiCapacityNote">از ظرفیت پلن فعلی</p>
           </div>
           <div class="glass rounded-2xl p-5">
             <p class="text-xs text-white/50 mb-2">میانگین نمره</p>
-            <p class="text-3xl font-black text-gold fa-num">۱۶.۴<span class="text-sm text-white/40">/۲۰</span></p>
+            <p class="text-3xl font-black text-gold fa-num"><span id="kpiAvgScore">۰</span><span class="text-sm text-white/40">/<span id="kpiMaxScore">۰</span></span></p>
             <p class="text-[11px] text-white/40 mt-1">از مجموع نمره کل</p>
           </div>
           <div class="glass rounded-2xl p-5">
             <p class="text-xs text-white/50 mb-2">نرخ قبولی</p>
-            <p class="text-3xl font-black text-gold fa-num">۸۲٪</p>
-            <p class="text-[11px] text-white/40 mt-1">حد نصاب: ۱۰ از ۲۰</p>
+            <p class="text-3xl font-black text-gold fa-num" id="kpiPassRate">۰٪</p>
+            <p class="text-[11px] text-white/40 mt-1" id="kpiThresholdNote">حد نصاب: ۵۰٪</p>
           </div>
           <div class="glass rounded-2xl p-5">
             <p class="text-xs text-white/50 mb-2">میانگین زمان پاسخ‌گویی</p>
-            <p class="text-3xl font-black text-gold fa-num">۳۲<span class="text-sm text-white/40"> دقیقه</span></p>
-            <p class="text-[11px] text-white/40 mt-1">از ۴۵ دقیقه مجاز</p>
+            <p class="text-3xl font-black text-gold fa-num"><span id="kpiAvgTime">۰</span><span class="text-sm text-white/40"> دقیقه</span></p>
+            <p class="text-[11px] text-white/40 mt-1" id="kpiTimeLimitNote">از زمان مجاز</p>
           </div>
         </div>
 
@@ -561,6 +566,7 @@ function setPlan(p, users){
   document.getElementById('planIcon').textContent = p==='free' ? '🔓' : '⭐';
   renderQuestions();
   refreshBulkReportBtn();
+  if(typeof renderKPIsAndCharts === 'function' && chartsInitialized) renderKPIsAndCharts();
 }
 function refreshBulkReportBtn(){
   const btn = document.getElementById('bulkReportBtn');
@@ -810,19 +816,52 @@ function buildShareLink(){
   const dir = cleanHref.substring(0, cleanHref.lastIndexOf('/') + 1);
   return dir + 'exam.html#e=' + encoded;
 }
-function publishExam(){
+function numericUserLimit(){
+  const u = examState.plan.userLimit;
+  if(u === 'custom') return 999999; // enterprise/custom plans: effectively unlimited here
+  const n = Number(u);
+  return Number.isFinite(n) && n > 0 ? n : 3;
+}
+
+async function publishExam(){
   const link = buildShareLink();
   if(!link) return;
+
+  const btn = document.getElementById('publishBtn');
+  if(btn){ btn.disabled = true; btn.innerHTML = '<span>در حال انتشار...</span>'; }
+
+  const limit = numericUserLimit();
+  try{
+    const examRef = db.collection('exams').doc(examState.examId);
+    const snap = await examRef.get();
+    if(!snap.exists){
+      await examRef.set({
+        title: examState.title,
+        ownerUid: currentUser.uid,
+        userLimit: limit,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        participantCount: 0
+      });
+    } else {
+      await examRef.update({ title: examState.title, userLimit: limit });
+    }
+  }catch(err){
+    console.error('publish firestore error', err);
+    alert('انتشار آزمون با خطا مواجه شد (احتمالاً به دلیل قطعی اتصال به Firebase). لینک همچنان کار می‌کند اما محدودیت ظرفیت شرکت‌کنندگان ممکن است اعمال نشود.');
+  }
+
+  if(btn){ btn.disabled = false; btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 10.5 15.5 6.5M8.5 13.5l7 4" stroke-linecap="round"/><circle cx="6" cy="12" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="18" cy="18" r="2.2"/></svg><span>انتشار آزمون</span>'; }
+
   document.getElementById('shareLinkInput').value = link;
   document.getElementById('openExamLink').href = link;
   const note = document.getElementById('publishModeNote');
-  if(examState.settings.access.mode === 'restricted'){
-    note.textContent = `🔒 دسترسی محدود فعال است — فقط ${toFa(examState.settings.access.allowedIds.length)} کد ثبت‌شده در فهرست مجاز می‌توانند وارد شوند.`;
-  } else {
-    note.textContent = '🔓 دسترسی عمومی است — هرکس این لینک را داشته باشد می‌تواند شرکت کند.';
-  }
+  const accessNote = examState.settings.access.mode === 'restricted'
+    ? `🔒 دسترسی محدود فعال است — فقط ${toFa(examState.settings.access.allowedIds.length)} کد ثبت‌شده در فهرست مجاز می‌توانند وارد شوند.`
+    : '🔓 دسترسی عمومی است — هرکس این لینک را داشته باشد می‌تواند وارد شود.';
+  note.textContent = accessNote + ` ظرفیت این آزمون بر اساس پلن فعلی، حداکثر ${toFa(limit)} شرکت‌کننده است.`;
   document.getElementById('publishModal').classList.remove('hidden');
   document.getElementById('publishModal').classList.add('flex');
+  startResultsListener();
 }
 function closePublish(){
   document.getElementById('publishModal').classList.add('hidden');
@@ -835,38 +874,49 @@ function copyShareLink(){
 }
 
 /* ============================================================
-   ANALYTICS — sample data
+   ANALYTICS — real data, live from Firestore
    ============================================================ */
-const sampleResults = [
-  {name:'علی محمدی', nid:'0012345678', score:18, time:29, status:'pass'},
-  {name:'زهرا احمدی', nid:'0023456789', score:9, time:41, status:'fail'},
-  {name:'رضا کریمی', nid:'0034567890', score:15, time:33, status:'pass'},
-  {name:'مریم رضایی', nid:'0045678901', score:19, time:25, status:'pass'},
-  {name:'حسین قاسمی', nid:'0056789012', score:7, time:44, status:'fail'},
-  {name:'فاطمه نوری', nid:'0067890123', score:16, time:30, status:'pass'},
-  {name:'امیر صادقی', nid:'0078901234', score:12, time:38, status:'pass'},
-  {name:'سارا حیدری', nid:'0089012345', score:8, time:45, status:'fail'},
-];
+let liveResults = [];      // real submitted results for examState.examId
+let resultsUnsub = null;   // Firestore listener unsubscribe fn
+
+function startResultsListener(){
+  if(!db || !examState.examId) return;
+  if(resultsUnsub){ resultsUnsub(); resultsUnsub = null; }
+  resultsUnsub = db.collection('exams').doc(examState.examId).collection('results')
+    .orderBy('submittedAt', 'asc')
+    .onSnapshot(snap=>{
+      liveResults = snap.docs.map(d=>d.data());
+      renderTable();
+      renderKPIsAndCharts();
+    }, err=>{
+      console.error('results listener error', err);
+    });
+}
+
+function passThresholdRatio(){ return 0.5; } // 50% pass mark, matches exam.html scoring
 
 function renderTable(){
-  const q = document.getElementById('searchInput').value.trim();
+  const q = (document.getElementById('searchInput').value || '').trim();
   const status = document.getElementById('statusFilter').value;
   const body = document.getElementById('resultsBody');
   body.innerHTML = '';
-  sampleResults
+
+  document.getElementById('analyticsEmptyNote').classList.toggle('hidden', liveResults.length > 0);
+
+  liveResults
     .filter(r => (status==='all' || r.status===status))
-    .filter(r => !q || r.name.includes(q) || r.nid.includes(q))
+    .filter(r => !q || (r.name||'').includes(q) || (r.nationalId||'').includes(q))
     .forEach(r=>{
       const tr = document.createElement('tr');
       tr.className = 'hover:bg-white/[0.03] transition-colors';
       tr.innerHTML = `
-        <td class="py-3 px-2 font-medium">${escapeHtml(r.name)}</td>
-        <td class="py-3 px-2 text-white/60 fa-num">${escapeHtml(r.nid)}</td>
-        <td class="py-3 px-2 text-gold font-bold fa-num">${toFa(r.score)}/۲۰</td>
-        <td class="py-3 px-2 text-white/60 fa-num">${toFa(r.time)} دقیقه</td>
+        <td class="py-3 px-2 font-medium">${escapeHtml(r.name||'—')}</td>
+        <td class="py-3 px-2 text-white/60 fa-num">${escapeHtml(r.nationalId||'—')}</td>
+        <td class="py-3 px-2 text-gold font-bold fa-num">${toFa(r.score ?? 0)}/${toFa(r.maxScore ?? 0)}</td>
+        <td class="py-3 px-2 text-white/60 fa-num">${toFa(r.timeTakenMinutes ?? 0)} دقیقه</td>
         <td class="py-3 px-2"><span class="status-pill ${r.status==='pass'?'status-pass':'status-fail'}">${r.status==='pass'?'قبول':'مردود'}</span></td>
         <td class="py-3 px-2">
-          <button onclick="tryReportCard('${r.name}')" class="text-xs ${currentPlan==='free' ? 'text-white/30' : 'text-gold hover:underline'}">
+          <button onclick="tryReportCard('${escapeHtml(r.name||'')}')" class="text-xs ${currentPlan==='free' ? 'text-white/30' : 'text-gold hover:underline'}">
             ${currentPlan==='free' ? '🔒 کارنامه' : 'مشاهده کارنامه'}
           </button>
         </td>
@@ -882,7 +932,8 @@ function tryReportCard(name){
   alert('کارنامه ' + name + ' آماده‌سازی شد.');
 }
 function exportCSV(){
-  const rows = [['نام','کد ملی','نمره','زمان (دقیقه)','وضعیت'], ...sampleResults.map(r=>[r.name,r.nid,r.score,r.time, r.status==='pass'?'قبول':'مردود'])];
+  const rows = [['نام','کد ملی','نمره','حداکثر نمره','زمان (دقیقه)','وضعیت'],
+    ...liveResults.map(r=>[r.name||'', r.nationalId||'', r.score??0, r.maxScore??0, r.timeTakenMinutes??0, r.status==='pass'?'قبول':'مردود'])];
   const csv = rows.map(r=>r.join(',')).join('\n');
   const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
@@ -891,7 +942,9 @@ function exportCSV(){
   URL.revokeObjectURL(url);
 }
 
+let scoreChartInstance = null, passChartInstance = null, trendChartInstance = null;
 let chartsInitialized = false;
+
 function initCharts(){
   if(chartsInitialized) return;
   chartsInitialized = true;
@@ -899,51 +952,102 @@ function initCharts(){
   const gridColor = 'rgba(255,255,255,0.06)';
   const textColor = 'rgba(255,255,255,0.55)';
 
-  new Chart(document.getElementById('scoreChart'), {
+  scoreChartInstance = new Chart(document.getElementById('scoreChart'), {
     type:'bar',
-    data:{
-      labels:['۰-۴','۵-۸','۹-۱۲','۱۳-۱۶','۱۷-۲۰'],
-      datasets:[{ label:'تعداد شرکت‌کنندگان', data:[3,9,22,58,56], backgroundColor:goldColor, borderRadius:6, maxBarThickness:46 }]
-    },
+    data:{ labels:[], datasets:[{ label:'تعداد شرکت‌کنندگان', data:[], backgroundColor:goldColor, borderRadius:6, maxBarThickness:46 }] },
     options:{
       plugins:{ legend:{display:false} },
       scales:{
         x:{ ticks:{color:textColor, font:{family:'Vazirmatn'}}, grid:{color:'transparent'} },
-        y:{ ticks:{color:textColor, font:{family:'Vazirmatn'}}, grid:{color:gridColor} }
+        y:{ beginAtZero:true, ticks:{color:textColor, font:{family:'Vazirmatn'}, precision:0}, grid:{color:gridColor} }
       }
     }
   });
 
-  new Chart(document.getElementById('passChart'), {
+  passChartInstance = new Chart(document.getElementById('passChart'), {
     type:'doughnut',
-    data:{
-      labels:['قبول','مردود'],
-      datasets:[{ data:[82,18], backgroundColor:['#E9D0A9','#6b6b6b'], borderWidth:0 }]
-    },
-    options:{
-      cutout:'70%',
-      plugins:{ legend:{position:'bottom', labels:{color:textColor, font:{family:'Vazirmatn'}, padding:16}} }
-    }
+    data:{ labels:['قبول','مردود'], datasets:[{ data:[0,0], backgroundColor:['#E9D0A9','#6b6b6b'], borderWidth:0 }] },
+    options:{ cutout:'70%', plugins:{ legend:{position:'bottom', labels:{color:textColor, font:{family:'Vazirmatn'}, padding:16}} } }
   });
 
-  new Chart(document.getElementById('trendChart'), {
+  trendChartInstance = new Chart(document.getElementById('trendChart'), {
     type:'line',
-    data:{
-      labels:['شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه'],
-      datasets:[{
-        label:'شرکت‌کنندگان', data:[10,18,26,34,29,22,9],
-        borderColor:goldColor, backgroundColor:'rgba(233,208,169,0.12)',
-        tension:.4, fill:true, pointBackgroundColor:goldColor, pointBorderColor:'#242424', pointRadius:4
-      }]
-    },
+    data:{ labels:[], datasets:[{
+      label:'شرکت‌کنندگان', data:[],
+      borderColor:goldColor, backgroundColor:'rgba(233,208,169,0.12)',
+      tension:.4, fill:true, pointBackgroundColor:goldColor, pointBorderColor:'#242424', pointRadius:4
+    }] },
     options:{
       plugins:{ legend:{display:false} },
       scales:{
         x:{ ticks:{color:textColor, font:{family:'Vazirmatn'}}, grid:{color:'transparent'} },
-        y:{ ticks:{color:textColor, font:{family:'Vazirmatn'}}, grid:{color:gridColor} }
+        y:{ beginAtZero:true, ticks:{color:textColor, font:{family:'Vazirmatn'}, precision:0}, grid:{color:gridColor} }
       }
     }
   });
+
+  renderKPIsAndCharts();
+}
+
+function renderKPIsAndCharts(){
+  const limit = numericUserLimit();
+  const total = liveResults.length;
+  const maxScore = examState.questions.length;
+
+  document.getElementById('kpiTotal').textContent = toFa(total);
+  document.getElementById('kpiCapacityNote').textContent = `از ظرفیت ${toFa(limit >= 999999 ? '∞' : limit)} نفره پلن فعلی`;
+  document.getElementById('kpiMaxScore').textContent = toFa(maxScore);
+  document.getElementById('kpiTimeLimitNote').textContent = `از ${toFa(examState.settings.timeLimitMinutes||0)} دقیقه مجاز`;
+  document.getElementById('kpiThresholdNote').textContent = `حد نصاب: ${toFa(Math.ceil(maxScore*passThresholdRatio()))} از ${toFa(maxScore)}`;
+
+  if(total === 0){
+    document.getElementById('kpiAvgScore').textContent = '۰';
+    document.getElementById('kpiPassRate').textContent = '۰٪';
+    document.getElementById('kpiAvgTime').textContent = '۰';
+  } else {
+    const avgScore = liveResults.reduce((s,r)=>s+(r.score||0),0) / total;
+    const passCount = liveResults.filter(r=>r.status==='pass').length;
+    const avgTime = liveResults.reduce((s,r)=>s+(r.timeTakenMinutes||0),0) / total;
+    document.getElementById('kpiAvgScore').textContent = toFa(Math.round(avgScore*10)/10);
+    document.getElementById('kpiPassRate').textContent = toFa(Math.round((passCount/total)*100)) + '٪';
+    document.getElementById('kpiAvgTime').textContent = toFa(Math.round(avgTime));
+  }
+
+  if(!chartsInitialized) return;
+
+  // score distribution buckets, scaled to this exam's question count
+  const bucketCount = 5;
+  const bucketSize = Math.max(1, Math.ceil((maxScore+1)/bucketCount));
+  const buckets = new Array(bucketCount).fill(0);
+  const bucketLabels = [];
+  for(let i=0;i<bucketCount;i++){
+    const lo = i*bucketSize, hi = Math.min(maxScore, lo+bucketSize-1);
+    bucketLabels.push(`${toFa(lo)}-${toFa(hi)}`);
+  }
+  liveResults.forEach(r=>{
+    const idx = Math.min(bucketCount-1, Math.floor((r.score||0)/bucketSize));
+    buckets[idx]++;
+  });
+  scoreChartInstance.data.labels = bucketLabels;
+  scoreChartInstance.data.datasets[0].data = buckets;
+  scoreChartInstance.update();
+
+  const passCount = liveResults.filter(r=>r.status==='pass').length;
+  const failCount = total - passCount;
+  passChartInstance.data.datasets[0].data = [passCount, failCount];
+  passChartInstance.update();
+
+  // submissions per day
+  const dayMap = {};
+  liveResults.forEach(r=>{
+    const d = r.submittedAt && r.submittedAt.toDate ? r.submittedAt.toDate() : new Date();
+    const key = d.toLocaleDateString('fa-IR');
+    dayMap[key] = (dayMap[key]||0) + 1;
+  });
+  const dayKeys = Object.keys(dayMap);
+  trendChartInstance.data.labels = dayKeys;
+  trendChartInstance.data.datasets[0].data = dayKeys.map(k=>dayMap[k]);
+  trendChartInstance.update();
 }
 
 /* ============================================================
@@ -964,6 +1068,7 @@ function initDashboard(){
   renderQuestions();
   renderTable();
   setAccessMode('public');
+  startResultsListener();
 
   /* read plan selected on the landing page, e.g. dashboard.html?plan=paid&users=100 */
   const params = new URLSearchParams(window.location.search);
@@ -987,6 +1092,8 @@ const firebaseConfig = {
   appId: "1:1004258048783:web:1eb3a8565d1c90bb0cdc7a"
 };
 firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+let currentUser = null;
 
 function loginRedirectUrl(){
   const qs = window.location.search; // preserve ?plan=...&users=... through the login flow
@@ -998,6 +1105,7 @@ firebase.auth().onAuthStateChanged(user=>{
     window.location.href = loginRedirectUrl();
     return;
   }
+  currentUser = user;
   document.getElementById('userEmailLabel').textContent = user.displayName || user.email || 'کاربر';
   document.getElementById('authGate').classList.add('hidden');
   document.getElementById('dashboardApp').classList.remove('hidden');
@@ -1005,6 +1113,7 @@ firebase.auth().onAuthStateChanged(user=>{
 });
 
 function logoutUser(){
+  if(resultsUnsub){ resultsUnsub(); resultsUnsub = null; }
   firebase.auth().signOut().then(()=>{ window.location.href = 'index.html'; });
 }
 </script>
