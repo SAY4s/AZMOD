@@ -92,7 +92,16 @@
 
   <main class="max-w-3xl mx-auto px-5 py-10 pb-24">
 
-    <!-- ============ LOADING / ERROR ============ -->
+    <!-- ============ LOADING ============ -->
+    <div id="view-loading" class="view active text-center py-24">
+      <div class="seal w-14 h-14 mx-auto mb-5 opacity-80">
+        <svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" fill="none" stroke="#E9D0A9" stroke-width="1.3"/><path d="M20 32 L27 39 L41 23" fill="none" stroke="#E9D0A9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="w-8 h-8 mx-auto rounded-full border-2 border-gold/25 border-t-gold animate-spin mb-4"></div>
+      <p class="text-white/50 text-sm">در حال بارگذاری آزمون...</p>
+    </div>
+
+    <!-- ============ ERROR ============ -->
     <div id="view-error" class="view text-center py-24">
       <div class="seal w-16 h-16 mx-auto mb-6 opacity-60">
         <svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" fill="none" stroke="#E9D0A9" stroke-width="1.4"/><path d="M20 20l20 20M40 20 20 40" stroke="#E9D0A9" stroke-width="2" stroke-linecap="round"/></svg>
@@ -195,12 +204,6 @@
 </div>
 
 <script>
-/* ============================================================
-   DECODE EXAM FROM URL HASH
-   ============================================================ */
-function b64DecodeUnicode(str){
-  return decodeURIComponent(atob(str).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-}
 function showView(id){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -219,28 +222,43 @@ try{
   firebase.initializeApp(firebaseConfig);
   db = firebase.firestore();
 }catch(err){
-  console.warn('Firestore unavailable — capacity limits and result-saving will be skipped.', err);
+  console.warn('Firestore init failed', err);
 }
 
 let exam = null;
+let examId = null;
+let ownerUid = null;
 let participant = { name:'', id:'' };
 let answers = {}; // questionId -> [optionIds]
 let timerInterval = null;
 let secondsLeft = 0;
 let startedAt = null;
 
-(function init(){
-  const hash = window.location.hash;
-  const match = hash.match(/e=([^&]+)/);
-  if(!match){
-    document.getElementById('errorDetail').textContent = 'هیچ داده‌ای در لینک یافت نشد (بخش #e= خالی است).';
+/* ============================================================
+   LOAD EXAM — links only carry an id; the actual content is
+   fetched live from Firestore so an edited exam always shows its
+   latest version at the exact same link.
+   ============================================================ */
+(async function init(){
+  const params = new URLSearchParams(window.location.search);
+  examId = params.get('id');
+  if(!examId){
+    document.getElementById('errorDetail').textContent = 'شناسه‌ی آزمون در لینک یافت نشد (بخش ?id= خالی است).';
+    showView('view-error');
+    return;
+  }
+  if(!db){
+    document.getElementById('errorDetail').textContent = 'اتصال به سرور برقرار نشد. اتصال اینترنت خود را بررسی کنید.';
     showView('view-error');
     return;
   }
   try{
-    const json = b64DecodeUnicode(decodeURIComponent(match[1]));
-    exam = JSON.parse(json);
-    if(!exam.questions || !exam.questions.length) throw new Error('این آزمون هیچ سؤالی ندارد.');
+    const snap = await db.collection('exams').doc(examId).get();
+    if(!snap.exists) throw new Error('این آزمون یافت نشد یا حذف شده است.');
+    const d = snap.data();
+    if(!d.questions || !d.questions.length) throw new Error('این آزمون هیچ سؤالی ندارد.');
+    exam = { title: d.title, description: d.description, settings: d.settings, questions: d.questions };
+    ownerUid = d.ownerUid;
   }catch(err){
     document.getElementById('errorDetail').textContent = 'جزئیات فنی خطا: ' + err.message;
     showView('view-error');
@@ -344,14 +362,23 @@ function shuffle(arr){
    because of a connectivity hiccup.
    ============================================================ */
 async function reserveSeat(){
-  if(!db || !exam.examId) return true;
-  const limit = exam.plan && exam.plan.userLimit;
-  const numericLimit = Number(limit);
-  if(!limit || !Number.isFinite(numericLimit) || numericLimit >= 999999) return true;
+  if(!db || !examId) return true;
 
   try{
+    // live lookup: admin plan changes apply immediately, not just at publish time
+    let numericLimit = null;
+    if(ownerUid){
+      const profileSnap = await db.collection('users').doc(ownerUid).get();
+      if(profileSnap.exists){
+        const u = profileSnap.data().userLimit;
+        const n = Number(u);
+        if(u !== 'custom' && Number.isFinite(n) && n > 0) numericLimit = n;
+      }
+    }
+    if(numericLimit === null) return true; // unlimited/custom plan or unknown — don't block
+
     let allowed = true;
-    const ref = db.collection('exams').doc(exam.examId);
+    const ref = db.collection('exams').doc(examId);
     await db.runTransaction(async (tx)=>{
       const snap = await tx.get(ref);
       const current = snap.exists ? (snap.data().participantCount || 0) : 0;
@@ -359,16 +386,7 @@ async function reserveSeat(){
         allowed = false;
         return;
       }
-      if(snap.exists){
-        tx.update(ref, { participantCount: firebase.firestore.FieldValue.increment(1) });
-      } else {
-        tx.set(ref, {
-          participantCount: 1,
-          userLimit: numericLimit,
-          title: exam.title || '',
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      }
+      tx.update(ref, { participantCount: firebase.firestore.FieldValue.increment(1) });
     });
     return allowed;
   }catch(err){
@@ -378,8 +396,8 @@ async function reserveSeat(){
 }
 
 function saveResultToFirestore(score, maxScore, timeTaken, status){
-  if(!db || !exam.examId) return;
-  db.collection('exams').doc(exam.examId).collection('results').add({
+  if(!db || !examId) return;
+  db.collection('exams').doc(examId).collection('results').add({
     name: participant.name || '',
     nationalId: participant.id || '',
     score, maxScore,
