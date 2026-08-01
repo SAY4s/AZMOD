@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
   tailwind.config = {
     theme: {
@@ -101,6 +103,16 @@
       <a href="index.html" class="btn-outline inline-block mt-8 text-sm font-bold px-6 py-2.5 rounded-xl">بازگشت به صفحه اصلی</a>
     </div>
 
+    <!-- ============ CAPACITY FULL ============ -->
+    <div id="view-full" class="view text-center py-24">
+      <div class="seal w-16 h-16 mx-auto mb-6 opacity-60">
+        <svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" fill="none" stroke="#E9D0A9" stroke-width="1.4"/><path d="M18 30h24M30 18v24" stroke="#E9D0A9" stroke-width="2" stroke-linecap="round" transform="rotate(45 30 30)"/></svg>
+      </div>
+      <h2 class="text-xl font-bold mb-2">ظرفیت این آزمون تکمیل شده است</h2>
+      <p class="text-white/50 text-sm max-w-md mx-auto leading-7">تعداد شرکت‌کنندگان مجاز در این آزمون بر اساس پلن سازنده به پایان رسیده و امکان ورود بیشتری وجود ندارد.</p>
+      <a href="index.html" class="btn-outline inline-block mt-8 text-sm font-bold px-6 py-2.5 rounded-xl">بازگشت به صفحه اصلی</a>
+    </div>
+
     <!-- ============ ENTRY / ACCESS GATE ============ -->
     <div id="view-entry" class="view">
       <div class="glass rounded-3xl p-8 sm:p-10 text-center">
@@ -132,7 +144,7 @@
           <input id="participantNameInput" placeholder="نام خود را وارد کنید" class="w-full rounded-lg px-3 py-2.5 text-sm">
         </div>
 
-        <button onclick="startExam()" class="btn-gold font-bold px-10 py-3.5 rounded-2xl">شروع آزمون</button>
+        <button id="startExamBtn" onclick="startExam()" class="btn-gold font-bold px-10 py-3.5 rounded-2xl">شروع آزمون</button>
       </div>
     </div>
 
@@ -194,6 +206,22 @@ function showView(id){
   document.getElementById(id).classList.add('active');
 }
 
+const firebaseConfig = {
+  apiKey: "AIzaSyCykNFE6DfzG-US7aofSWSGtXMIK3Wz1O0",
+  authDomain: "azmood-2f0cc.firebaseapp.com",
+  projectId: "azmood-2f0cc",
+  storageBucket: "azmood-2f0cc.firebasestorage.app",
+  messagingSenderId: "1004258048783",
+  appId: "1:1004258048783:web:1eb3a8565d1c90bb0cdc7a"
+};
+let db = null;
+try{
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+}catch(err){
+  console.warn('Firestore unavailable — capacity limits and result-saving will be skipped.', err);
+}
+
 let exam = null;
 let participant = { name:'', id:'' };
 let answers = {}; // questionId -> [optionIds]
@@ -244,7 +272,7 @@ function renderEntry(){
   showView('view-entry');
 }
 
-function startExam(){
+async function startExam(){
   const name = document.getElementById('participantNameInput').value.trim();
   if(!name){
     document.getElementById('participantNameInput').focus();
@@ -260,6 +288,19 @@ function startExam(){
     }
     participant.id = idVal;
   }
+
+  const startBtn = document.getElementById('startExamBtn');
+  if(startBtn){ startBtn.disabled = true; startBtn.textContent = 'در حال بررسی ظرفیت...'; }
+
+  const seatOk = await reserveSeat();
+
+  if(startBtn){ startBtn.disabled = false; startBtn.textContent = 'شروع آزمون'; }
+
+  if(!seatOk){
+    showView('view-full');
+    return;
+  }
+
   participant.name = name;
   startedAt = Date.now();
 
@@ -293,6 +334,61 @@ function shuffle(arr){
     [arr[i],arr[j]]=[arr[j],arr[i]];
   }
   return arr;
+}
+
+/* ============================================================
+   CAPACITY — reserve one of the plan's seats before letting
+   the participant start. If Firestore can't be reached (e.g. the
+   participant is also behind the same filtering), we fail OPEN:
+   we'd rather let them take the exam than block real people
+   because of a connectivity hiccup.
+   ============================================================ */
+async function reserveSeat(){
+  if(!db || !exam.examId) return true;
+  const limit = exam.plan && exam.plan.userLimit;
+  const numericLimit = Number(limit);
+  if(!limit || !Number.isFinite(numericLimit) || numericLimit >= 999999) return true;
+
+  try{
+    let allowed = true;
+    const ref = db.collection('exams').doc(exam.examId);
+    await db.runTransaction(async (tx)=>{
+      const snap = await tx.get(ref);
+      const current = snap.exists ? (snap.data().participantCount || 0) : 0;
+      if(current >= numericLimit){
+        allowed = false;
+        return;
+      }
+      if(snap.exists){
+        tx.update(ref, { participantCount: firebase.firestore.FieldValue.increment(1) });
+      } else {
+        tx.set(ref, {
+          participantCount: 1,
+          userLimit: numericLimit,
+          title: exam.title || '',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+    });
+    return allowed;
+  }catch(err){
+    console.warn('reserveSeat failed (offline/filtered?) — allowing participant through:', err);
+    return true;
+  }
+}
+
+function saveResultToFirestore(score, maxScore, timeTaken, status){
+  if(!db || !exam.examId) return;
+  db.collection('exams').doc(exam.examId).collection('results').add({
+    name: participant.name || '',
+    nationalId: participant.id || '',
+    score, maxScore,
+    timeTakenMinutes: timeTaken,
+    status,
+    submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(err=>{
+    console.warn('Could not save result to Firestore (offline/filtered?):', err);
+  });
 }
 
 function updateTimerText(){
@@ -393,6 +489,11 @@ function submitExam(auto){
 
   const maxScore = exam.questions.length;
   const timeTaken = startedAt ? Math.round((Date.now()-startedAt)/60000) : 0;
+  const passThreshold = Math.ceil(maxScore*0.5);
+  const status = correctCount >= passThreshold ? 'pass' : 'fail';
+
+  saveResultToFirestore(correctCount, maxScore, timeTaken, status);
+
   renderResult(correctCount, maxScore, timeTaken, review);
   showView('view-result');
 }
