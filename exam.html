@@ -96,7 +96,8 @@
         <svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" fill="none" stroke="#E9D0A9" stroke-width="1.4"/><path d="M20 20l20 20M40 20 20 40" stroke="#E9D0A9" stroke-width="2" stroke-linecap="round"/></svg>
       </div>
       <h2 class="text-xl font-bold mb-2">لینک آزمون نامعتبر است</h2>
-      <p class="text-white/50 text-sm">این لینک ناقص است یا آزمونی برای نمایش وجود ندارد. لطفاً لینک صحیح را از سازنده آزمون دریافت کنید.</p>
+      <p class="text-white/50 text-sm max-w-md mx-auto leading-7">این لینک ناقص است یا آزمونی برای نمایش وجود ندارد. لطفاً لینک صحیح را از سازنده آزمون دریافت کنید.</p>
+      <p id="errorDetail" class="text-white/30 text-xs mt-4 font-mono"></p>
       <a href="index.html" class="btn-outline inline-block mt-8 text-sm font-bold px-6 py-2.5 rounded-xl">بازگشت به صفحه اصلی</a>
     </div>
 
@@ -203,12 +204,17 @@ let startedAt = null;
 (function init(){
   const hash = window.location.hash;
   const match = hash.match(/e=([^&]+)/);
-  if(!match){ showView('view-error'); return; }
+  if(!match){
+    document.getElementById('errorDetail').textContent = 'هیچ داده‌ای در لینک یافت نشد (بخش #e= خالی است).';
+    showView('view-error');
+    return;
+  }
   try{
     const json = b64DecodeUnicode(decodeURIComponent(match[1]));
     exam = JSON.parse(json);
-    if(!exam.questions || !exam.questions.length) throw new Error('empty');
+    if(!exam.questions || !exam.questions.length) throw new Error('این آزمون هیچ سؤالی ندارد.');
   }catch(err){
+    document.getElementById('errorDetail').textContent = 'جزئیات فنی خطا: ' + err.message;
     showView('view-error');
     return;
   }
