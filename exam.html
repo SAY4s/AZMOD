@@ -384,6 +384,7 @@ function getWeekKey(date){
 
 async function reserveSeat(){
   if(!db || !examId) return true;
+  if(exam.settings?.isNational) return true; // national exams are open practice — no plan-based cap
 
   try{
     // live lookup: admin plan changes apply immediately, not just at publish time
@@ -584,7 +585,9 @@ function submitExam(auto){
     }))
   }));
 
-  saveResultToFirestore(correctCount, maxScore, timeTaken, status, answerSnapshot);
+  if(exam.settings?.saveResults !== false){
+    saveResultToFirestore(correctCount, maxScore, timeTaken, status, answerSnapshot);
+  }
 
   renderResult(correctCount, maxScore, timeTaken, review);
   showView('view-result');
