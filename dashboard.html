@@ -8,6 +8,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -330,15 +332,27 @@
 
           <!-- questions -->
           <div class="xl:col-span-2 space-y-5">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-wrap items-center justify-between gap-3">
               <h3 class="font-bold text-lg">سؤالات آزمون <span id="qCount" class="text-gold fa-num text-sm">(۰)</span></h3>
-              <button onclick="addQuestion()" class="btn-gold text-sm font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
-                افزودن سؤال
-              </button>
+              <div class="flex items-center gap-2">
+                <div class="flex items-center rounded-lg border border-white/10 p-1 text-xs">
+                  <button id="builderViewScroll" onclick="setBuilderViewMode('scroll')" class="px-3 py-1.5 rounded-md bg-white/10 text-gold font-bold transition-colors">تومار</button>
+                  <button id="builderViewPaged" onclick="setBuilderViewMode('paged')" class="px-3 py-1.5 rounded-md text-white/60 font-bold transition-colors">تک‌سؤالی</button>
+                </div>
+                <button onclick="addQuestion()" class="btn-gold text-sm font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+                  افزودن سؤال
+                </button>
+              </div>
             </div>
 
             <div id="questionsWrap" class="space-y-5"></div>
+
+            <div id="builderPagedNav" class="hidden glass rounded-2xl p-3 flex items-center justify-between gap-3">
+              <button id="builderPrevQBtn" onclick="goToBuilderQuestion(builderQIndex-1)" class="btn-outline text-xs font-bold px-4 py-2 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed">قبلی</button>
+              <span id="builderPagedIndicator" class="text-xs text-white/50 fa-num"></span>
+              <button id="builderNextQBtn" onclick="goToBuilderQuestion(builderQIndex+1)" class="btn-outline text-xs font-bold px-4 py-2 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed">بعدی</button>
+            </div>
 
             <button onclick="addQuestion()" class="w-full border border-dashed border-white/20 hover:border-gold/50 rounded-2xl py-6 text-white/50 hover:text-gold transition-colors text-sm">
               + یک سؤال جدید اضافه کنید
@@ -555,7 +569,7 @@
       <button onclick="closePublish()" class="btn-ghost text-xl leading-none">×</button>
     </div>
     <div class="p-6">
-      <p class="text-sm text-white/60 mb-4 leading-7">این لینک را برای شرکت‌کنندگان ارسال کنید. آزمون به‌همراه تمام سؤالات، تنظیمات نمایش نتیجه و فهرست دسترسی، درون خود لینک ذخیره شده و نیازی به سرور جداگانه ندارد.</p>
+      <p class="text-sm text-white/60 mb-4 leading-7">این لینک را برای شرکت‌کنندگان ارسال کنید. سؤالات و تنظیمات از سرور خوانده می‌شوند، پس با هر ویرایش و انتشار دوباره، همین لینک به‌روز می‌ماند.</p>
       <div class="flex items-center gap-2 mb-4">
         <input id="shareLinkInput" readonly class="flex-1 rounded-lg px-3 py-2.5 text-xs font-mono" onclick="this.select()">
         <button onclick="copyShareLink()" class="btn-outline text-xs font-bold px-3 py-2.5 rounded-lg shrink-0">کپی لینک</button>
@@ -563,6 +577,21 @@
       <div id="publishModeNote" class="text-xs rounded-lg p-3 mb-4 bg-white/5 border border-white/10 text-white/55"></div>
       <p class="text-[11px] text-white/35 mb-4">اگر لینک باز نشد: مطمئن شوید فایل <span class="text-gold/80 font-mono">exam.html</span> دقیقاً کنار همین فایل (dashboard.html) روی گیت‌هاب آپلود شده — نام فایل‌ها روی گیت‌هاب حساس به حروف بزرگ/کوچک است.</p>
       <a id="openExamLink" href="#" target="_blank" class="btn-gold w-full text-center block text-sm font-bold py-3 rounded-xl">باز کردن به‌عنوان شرکت‌کننده</a>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== REPORT CARD MODAL ===================== -->
+<div id="reportCardModal" class="hidden fixed inset-0 z-50 items-center justify-center p-5 bg-black/60 backdrop-blur-sm">
+  <div class="bg-charcoal-dark border border-gold/15 rounded-2xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
+      <p class="font-bold text-gold">کارنامه‌ی شرکت‌کننده</p>
+      <button onclick="closeReportCard()" class="btn-ghost text-xl leading-none">×</button>
+    </div>
+    <div id="reportCardBody" class="flex-1 overflow-y-auto scrollbar-thin p-4"></div>
+    <div class="flex justify-end gap-2 px-6 py-4 border-t border-white/10 shrink-0">
+      <button onclick="closeReportCard()" class="btn-outline text-xs font-bold px-4 py-2 rounded-lg">بستن</button>
+      <button id="downloadReportCardBtn" onclick="downloadCurrentReportCard()" class="btn-gold text-xs font-bold px-4 py-2 rounded-lg">دانلود PDF</button>
     </div>
   </div>
 </div>
@@ -644,69 +673,104 @@ function tryBulkReport(){
     alert('صدور خودکار کارنامه فقط در پلن‌های پرداختی فعال است. برای فعال‌سازی، پلن خود را ارتقا دهید.');
     return;
   }
-  alert('در حال آماده‌سازی فایل کارنامه گروهی (PDF)...');
+  generateBulkReportPDF();
 }
 refreshBulkReportBtn();
 
 /* ============================================================
    QUESTION BUILDER RENDER
    ============================================================ */
+let builderViewMode = 'scroll'; // 'scroll' | 'paged'
+let builderQIndex = 0;
+
+function buildQuestionEditCard(q, qIndex){
+  const card = document.createElement('div');
+  card.className = 'qcard glass rounded-2xl p-5 border border-white/10';
+  card.innerHTML = `
+    <div class="flex items-start justify-between gap-3 mb-4">
+      <div class="flex items-center gap-2">
+        <span class="w-7 h-7 rounded-full bg-gold/15 text-gold text-xs font-black flex items-center justify-center fa-num">${toFa(qIndex+1)}</span>
+        <select class="rounded-lg px-2 py-1.5 text-xs" onchange="updateQuestion('${q.id}','type',this.value)">
+          <option value="single" ${q.type==='single'?'selected':''}>تک‌گزینه‌ای</option>
+          <option value="multiple" ${q.type==='multiple'?'selected':''}>چندگزینه‌ای</option>
+        </select>
+      </div>
+      <button onclick="removeQuestion('${q.id}')" class="btn-ghost text-xs flex items-center gap-1">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        حذف سؤال
+      </button>
+    </div>
+
+    <textarea rows="2" placeholder="متن سؤال را وارد کنید..." class="w-full rounded-lg px-3 py-2.5 text-sm mb-3 resize-none" oninput="updateQuestion('${q.id}','text',this.value)">${escapeHtml(q.text)}</textarea>
+
+    <div class="flex items-center gap-2 mb-4">
+      <input type="text" placeholder="آدرس تصویر سؤال (اختیاری) — URL" value="${escapeHtml(q.image||'')}" class="flex-1 rounded-lg px-3 py-2 text-xs" oninput="updateQuestion('${q.id}','image',this.value)">
+      ${q.image ? `<img src="${escapeHtml(q.image)}" class="w-10 h-10 rounded-lg object-cover border border-white/10" onerror="this.style.display='none'">` : ''}
+    </div>
+
+    <div class="space-y-2 mb-3" id="opts-${q.id}"></div>
+
+    <button onclick="addOption('${q.id}')" class="text-xs text-gold/80 hover:text-gold flex items-center gap-1.5 mt-1">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+      افزودن گزینه
+    </button>
+  `;
+  const optsWrap = card.querySelector(`#opts-${q.id}`);
+  q.options.forEach((o, oIndex)=>{
+    const row = document.createElement('div');
+    row.className = `opt-row flex items-center gap-2 rounded-lg border border-white/10 p-2 ${o.isCorrect ? 'correct' : ''}`;
+    row.innerHTML = `
+      <button title="علامت‌گذاری به‌عنوان پاسخ صحیح" onclick="toggleCorrect('${q.id}','${o.id}')"
+        class="shrink-0 w-6 h-6 rounded-full border ${o.isCorrect ? 'bg-gold border-gold text-charcoal-dark' : 'border-white/25 text-transparent'} flex items-center justify-center text-xs font-black transition-colors">✓</button>
+      <span class="text-xs text-white/40 shrink-0 fa-num">${String.fromCharCode(1571+oIndex) || ''}</span>
+      <input type="text" value="${escapeHtml(o.text)}" placeholder="متن گزینه ${toFa(oIndex+1)}" class="flex-1 bg-transparent border-none text-sm py-1 px-1 focus:ring-0" oninput="updateOption('${q.id}','${o.id}','text',this.value)">
+      <input type="text" value="${escapeHtml(o.image||'')}" placeholder="URL تصویر (اختیاری)" class="w-40 rounded-lg px-2 py-1.5 text-[11px]" oninput="updateOption('${q.id}','${o.id}','image',this.value)">
+      <button onclick="removeOption('${q.id}','${o.id}')" class="btn-ghost shrink-0 px-1">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12" stroke-linecap="round"/></svg>
+      </button>
+    `;
+    optsWrap.appendChild(row);
+  });
+  return card;
+}
+
+function setBuilderViewMode(mode){
+  builderViewMode = mode;
+  builderQIndex = 0;
+  document.getElementById('builderViewScroll').classList.toggle('bg-white/10', mode==='scroll');
+  document.getElementById('builderViewScroll').classList.toggle('text-gold', mode==='scroll');
+  document.getElementById('builderViewPaged').classList.toggle('bg-white/10', mode==='paged');
+  document.getElementById('builderViewPaged').classList.toggle('text-gold', mode==='paged');
+  renderQuestions();
+}
+function goToBuilderQuestion(idx){
+  if(idx < 0 || idx >= examState.questions.length) return;
+  builderQIndex = idx;
+  renderQuestions();
+}
+
 function renderQuestions(){
   const wrap = document.getElementById('questionsWrap');
   wrap.innerHTML = '';
   document.getElementById('qCount').textContent = `(${toFa(examState.questions.length)})`;
+  const pagedNav = document.getElementById('builderPagedNav');
 
-  examState.questions.forEach((q, qIndex)=>{
-    const card = document.createElement('div');
-    card.className = 'qcard glass rounded-2xl p-5 border border-white/10';
-    card.innerHTML = `
-      <div class="flex items-start justify-between gap-3 mb-4">
-        <div class="flex items-center gap-2">
-          <span class="w-7 h-7 rounded-full bg-gold/15 text-gold text-xs font-black flex items-center justify-center fa-num">${toFa(qIndex+1)}</span>
-          <select class="rounded-lg px-2 py-1.5 text-xs" onchange="updateQuestion('${q.id}','type',this.value)">
-            <option value="single" ${q.type==='single'?'selected':''}>تک‌گزینه‌ای</option>
-            <option value="multiple" ${q.type==='multiple'?'selected':''}>چندگزینه‌ای</option>
-          </select>
-        </div>
-        <button onclick="removeQuestion('${q.id}')" class="btn-ghost text-xs flex items-center gap-1">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          حذف سؤال
-        </button>
-      </div>
+  if(examState.questions.length === 0){
+    pagedNav.classList.add('hidden');
+    return;
+  }
 
-      <textarea rows="2" placeholder="متن سؤال را وارد کنید..." class="w-full rounded-lg px-3 py-2.5 text-sm mb-3 resize-none" oninput="updateQuestion('${q.id}','text',this.value)">${escapeHtml(q.text)}</textarea>
-
-      <div class="flex items-center gap-2 mb-4">
-        <input type="text" placeholder="آدرس تصویر سؤال (اختیاری) — URL" value="${escapeHtml(q.image||'')}" class="flex-1 rounded-lg px-3 py-2 text-xs" oninput="updateQuestion('${q.id}','image',this.value)">
-        ${q.image ? `<img src="${escapeHtml(q.image)}" class="w-10 h-10 rounded-lg object-cover border border-white/10" onerror="this.style.display='none'">` : ''}
-      </div>
-
-      <div class="space-y-2 mb-3" id="opts-${q.id}"></div>
-
-      <button onclick="addOption('${q.id}')" class="text-xs text-gold/80 hover:text-gold flex items-center gap-1.5 mt-1">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
-        افزودن گزینه
-      </button>
-    `;
-    wrap.appendChild(card);
-
-    const optsWrap = card.querySelector(`#opts-${q.id}`);
-    q.options.forEach((o, oIndex)=>{
-      const row = document.createElement('div');
-      row.className = `opt-row flex items-center gap-2 rounded-lg border border-white/10 p-2 ${o.isCorrect ? 'correct' : ''}`;
-      row.innerHTML = `
-        <button title="علامت‌گذاری به‌عنوان پاسخ صحیح" onclick="toggleCorrect('${q.id}','${o.id}')"
-          class="shrink-0 w-6 h-6 rounded-full border ${o.isCorrect ? 'bg-gold border-gold text-charcoal-dark' : 'border-white/25 text-transparent'} flex items-center justify-center text-xs font-black transition-colors">✓</button>
-        <span class="text-xs text-white/40 shrink-0 fa-num">${String.fromCharCode(1571+oIndex) || ''}</span>
-        <input type="text" value="${escapeHtml(o.text)}" placeholder="متن گزینه ${toFa(oIndex+1)}" class="flex-1 bg-transparent border-none text-sm py-1 px-1 focus:ring-0" oninput="updateOption('${q.id}','${o.id}','text',this.value)">
-        <input type="text" value="${escapeHtml(o.image||'')}" placeholder="URL تصویر (اختیاری)" class="w-40 rounded-lg px-2 py-1.5 text-[11px]" oninput="updateOption('${q.id}','${o.id}','image',this.value)">
-        <button onclick="removeOption('${q.id}','${o.id}')" class="btn-ghost shrink-0 px-1">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12" stroke-linecap="round"/></svg>
-        </button>
-      `;
-      optsWrap.appendChild(row);
-    });
-  });
+  if(builderViewMode === 'scroll'){
+    pagedNav.classList.add('hidden');
+    examState.questions.forEach((q, qIndex)=> wrap.appendChild(buildQuestionEditCard(q, qIndex)));
+  } else {
+    if(builderQIndex >= examState.questions.length) builderQIndex = examState.questions.length - 1;
+    pagedNav.classList.remove('hidden');
+    wrap.appendChild(buildQuestionEditCard(examState.questions[builderQIndex], builderQIndex));
+    document.getElementById('builderPagedIndicator').textContent = `سؤال ${toFa(builderQIndex+1)} از ${toFa(examState.questions.length)}`;
+    document.getElementById('builderPrevQBtn').disabled = builderQIndex === 0;
+    document.getElementById('builderNextQBtn').disabled = builderQIndex === examState.questions.length - 1;
+  }
 }
 
 function addQuestion(){
@@ -715,6 +779,7 @@ function addQuestion(){
     return;
   }
   examState.questions.push(newQuestion());
+  if(builderViewMode === 'paged') builderQIndex = examState.questions.length - 1;
   renderQuestions();
 }
 function removeQuestion(id){
@@ -972,7 +1037,7 @@ function startResultsListener(){
   resultsUnsub = db.collection('exams').doc(examState.examId).collection('results')
     .orderBy('submittedAt', 'asc')
     .onSnapshot(snap=>{
-      liveResults = snap.docs.map(d=>d.data());
+      liveResults = snap.docs.map(d=>({ id: d.id, ...d.data() }));
       renderTable();
       renderKPIsAndCharts();
     }, err=>{
@@ -1003,7 +1068,7 @@ function renderTable(){
         <td class="py-3 px-2 text-white/60 fa-num">${toFa(r.timeTakenMinutes ?? 0)} دقیقه</td>
         <td class="py-3 px-2"><span class="status-pill ${r.status==='pass'?'status-pass':'status-fail'}">${r.status==='pass'?'قبول':'مردود'}</span></td>
         <td class="py-3 px-2">
-          <button onclick="tryReportCard('${escapeHtml(r.name||'')}')" class="text-xs ${currentPlan==='free' ? 'text-white/30' : 'text-gold hover:underline'}">
+          <button onclick="openReportCard('${r.id}')" class="text-xs ${currentPlan==='free' ? 'text-white/30' : 'text-gold hover:underline'}">
             ${currentPlan==='free' ? '🔒 کارنامه' : 'مشاهده کارنامه'}
           </button>
         </td>
@@ -1011,12 +1076,143 @@ function renderTable(){
       body.appendChild(tr);
     });
 }
-function tryReportCard(name){
-  if(currentPlan==='free'){
-    alert('صدور کارنامه فقط در پلن‌های پرداختی فعال است.');
+/* ============================================================
+   REPORT CARDS (کارنامه) — real per-question breakdown +
+   downloadable PDF, rendered client-side via html2canvas + jsPDF
+   so Persian/RTL text always looks correct (rendered by the
+   browser itself, not by jsPDF's limited font shaping).
+   ============================================================ */
+function buildReportCardHTML(result){
+  const passed = result.status === 'pass';
+  const answers = result.answers || [];
+  return `
+    <div id="reportCardPrintArea" class="bg-charcoal-dark rounded-2xl p-8" dir="rtl">
+      <div class="flex items-center justify-between mb-6 pb-6 border-b border-gold/20">
+        <div class="flex items-center gap-3">
+          <span class="seal w-10 h-10"><svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" fill="none" stroke="#E9D0A9" stroke-width="1.4"/><path d="M20 32 L27 39 L41 23" fill="none" stroke="#E9D0A9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <div>
+            <p class="font-black text-gold">آزمون چی</p>
+            <p class="text-[11px] text-white/40">کارنامه‌ی شرکت‌کننده</p>
+          </div>
+        </div>
+        <span class="status-pill ${passed?'status-pass':'status-fail'}">${passed?'قبول':'مردود'}</span>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
+        <div><p class="text-white/40 text-xs mb-1">نام شرکت‌کننده</p><p class="font-bold">${escapeHtml(result.name||'—')}</p></div>
+        <div><p class="text-white/40 text-xs mb-1">کد ملی</p><p class="font-bold fa-num">${escapeHtml(result.nationalId||'—')}</p></div>
+        <div><p class="text-white/40 text-xs mb-1">عنوان آزمون</p><p class="font-bold">${escapeHtml(examState.title||'—')}</p></div>
+        <div><p class="text-white/40 text-xs mb-1">زمان صرف‌شده</p><p class="font-bold fa-num">${toFa(result.timeTakenMinutes ?? 0)} دقیقه</p></div>
+      </div>
+
+      <div class="text-center rounded-xl bg-gold/10 border border-gold/25 py-4 mb-6">
+        <p class="text-4xl font-black text-gold fa-num">${toFa(result.score ?? 0)}<span class="text-lg text-white/40">/${toFa(result.maxScore ?? 0)}</span></p>
+        <p class="text-xs text-white/50 mt-1">نمره‌ی نهایی</p>
+      </div>
+
+      ${answers.length ? `
+      <p class="font-bold text-sm mb-3">جزئیات پاسخ‌ها</p>
+      <div class="space-y-4">
+        ${answers.map((a, i)=>`
+          <div class="rounded-xl border ${a.isCorrect?'border-emerald-400/25':'border-red-400/25'} p-4">
+            <div class="flex items-start gap-2 mb-2">
+              <span class="w-5 h-5 shrink-0 rounded-full ${a.isCorrect?'bg-emerald-400/20 text-emerald-300':'bg-red-400/20 text-red-300'} text-[10px] font-black flex items-center justify-center fa-num">${toFa(i+1)}</span>
+              <p class="text-sm font-semibold leading-6">${escapeHtml(a.questionText||'')}</p>
+            </div>
+            <div class="space-y-1.5 pr-7">
+              ${(a.options||[]).map(o=>{
+                let cls = 'border-white/10 text-white/60';
+                let tag = '';
+                if(o.isCorrect){ cls='border-emerald-400/40 bg-emerald-400/5 text-emerald-200'; tag='پاسخ صحیح'; }
+                if(o.wasSelected && !o.isCorrect){ cls='border-red-400/40 bg-red-400/5 text-red-200'; tag='پاسخ شرکت‌کننده'; }
+                if(o.wasSelected && o.isCorrect){ tag='پاسخ صحیح · انتخاب شرکت‌کننده'; }
+                return `<div class="text-xs rounded-lg border ${cls} px-3 py-2 flex items-center justify-between gap-2">
+                  <span>${escapeHtml(o.text||'')}</span>
+                  ${tag ? `<span class="shrink-0 text-[10px] opacity-80">${tag}</span>` : ''}
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+        `).join('')}
+      </div>` : `<p class="text-white/40 text-xs text-center py-6">جزئیات پاسخ برای این نتیجه ثبت نشده است.</p>`}
+    </div>
+  `;
+}
+
+function openReportCard(resultId){
+  if(currentPlan === 'free'){
+    alert('صدور کارنامه فقط در پلن‌های پرداختی فعال است. برای فعال‌سازی، پلن خود را ارتقا دهید.');
     return;
   }
-  alert('کارنامه ' + name + ' آماده‌سازی شد.');
+  const result = liveResults.find(r=>r.id === resultId);
+  if(!result){ alert('این نتیجه یافت نشد.'); return; }
+  document.getElementById('reportCardBody').innerHTML = buildReportCardHTML(result);
+  document.getElementById('reportCardModal').classList.remove('hidden');
+  document.getElementById('reportCardModal').classList.add('flex');
+}
+function closeReportCard(){
+  document.getElementById('reportCardModal').classList.add('hidden');
+  document.getElementById('reportCardModal').classList.remove('flex');
+}
+
+async function renderNodeToPdfPage(pdf, node, isFirstPage){
+  const canvas = await html2canvas(node, { scale:2, backgroundColor:'#242424', useCORS:true });
+  const imgData = canvas.toDataURL('image/png');
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
+  const w = canvas.width * ratio;
+  const h = canvas.height * ratio;
+  if(!isFirstPage) pdf.addPage();
+  pdf.setFillColor(36,36,36);
+  pdf.rect(0,0,pageWidth,pageHeight,'F');
+  pdf.addImage(imgData, 'PNG', (pageWidth-w)/2, 16, w, h);
+}
+
+async function downloadCurrentReportCard(){
+  const node = document.getElementById('reportCardPrintArea');
+  if(!node) return;
+  const btn = document.getElementById('downloadReportCardBtn');
+  if(btn){ btn.disabled = true; btn.textContent = 'در حال ساخت PDF...'; }
+  try{
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ unit:'px', format:'a4' });
+    await renderNodeToPdfPage(pdf, node, true);
+    pdf.save('کارنامه.pdf');
+  }catch(err){
+    console.error(err);
+    alert('ساخت PDF با خطا مواجه شد.');
+  }
+  if(btn){ btn.disabled = false; btn.textContent = 'دانلود PDF'; }
+}
+
+async function generateBulkReportPDF(){
+  if(!liveResults.length){
+    alert('هنوز هیچ نتیجه‌ای برای این آزمون ثبت نشده است.');
+    return;
+  }
+  const btn = document.getElementById('bulkReportBtn');
+  if(btn){ btn.disabled = true; btn.innerHTML = 'در حال ساخت PDF گروهی...'; }
+  const hiddenHost = document.createElement('div');
+  hiddenHost.style.position = 'fixed';
+  hiddenHost.style.left = '-9999px';
+  hiddenHost.style.top = '0';
+  hiddenHost.style.width = '760px';
+  document.body.appendChild(hiddenHost);
+  try{
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ unit:'px', format:'a4' });
+    for(let i=0; i<liveResults.length; i++){
+      hiddenHost.innerHTML = buildReportCardHTML(liveResults[i]);
+      await renderNodeToPdfPage(pdf, hiddenHost.firstElementChild, i===0);
+    }
+    pdf.save('کارنامه-گروهی.pdf');
+  }catch(err){
+    console.error(err);
+    alert('ساخت PDF گروهی با خطا مواجه شد.');
+  }
+  document.body.removeChild(hiddenHost);
+  if(btn){ btn.disabled = false; refreshBulkReportBtn(); }
 }
 function exportCSV(){
   const rows = [['نام','کد ملی','نمره','حداکثر نمره','زمان (دقیقه)','وضعیت'],
