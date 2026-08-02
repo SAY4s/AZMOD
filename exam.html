@@ -434,7 +434,7 @@ async function reserveSeat(){
   }
 }
 
-function saveResultToFirestore(score, maxScore, timeTaken, status){
+function saveResultToFirestore(score, maxScore, timeTaken, status, answers){
   if(!db || !examId) return;
   db.collection('exams').doc(examId).collection('results').add({
     name: participant.name || '',
@@ -442,6 +442,7 @@ function saveResultToFirestore(score, maxScore, timeTaken, status){
     score, maxScore,
     timeTakenMinutes: timeTaken,
     status,
+    answers: answers || [],
     submittedAt: firebase.firestore.FieldValue.serverTimestamp()
   }).catch(err=>{
     console.warn('Could not save result to Firestore (offline/filtered?):', err);
@@ -577,7 +578,19 @@ function submitExam(auto){
   const passThreshold = Math.ceil(maxScore*0.5);
   const status = correctCount >= passThreshold ? 'pass' : 'fail';
 
-  saveResultToFirestore(correctCount, maxScore, timeTaken, status);
+  const answerSnapshot = review.map(r=>({
+    questionText: r.q.text || '',
+    questionImage: r.q.image || null,
+    isCorrect: r.isCorrect,
+    options: r.q.options.map(o=>({
+      text: o.text || '',
+      image: o.image || null,
+      isCorrect: !!o.isCorrect,
+      wasSelected: r.givenIds.includes(o.id)
+    }))
+  }));
+
+  saveResultToFirestore(correctCount, maxScore, timeTaken, status, answerSnapshot);
 
   renderResult(correctCount, maxScore, timeTaken, review);
   showView('view-result');
