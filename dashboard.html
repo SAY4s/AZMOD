@@ -291,6 +291,41 @@
                 </div>
               </label>
             </div>
+            <div class="divider-gold mb-5"></div>
+
+            <h4 class="font-bold text-sm mb-3">نحوه‌ی نمایش سؤالات</h4>
+            <div class="space-y-2 mb-5">
+              <label class="flex items-center gap-3 rounded-lg border border-white/10 p-3 cursor-pointer hover:border-gold/40 transition-colors has-[:checked]:border-gold has-[:checked]:bg-gold/5">
+                <input type="radio" name="layoutMode" value="scroll" checked onchange="examState.settings.layout=this.value" class="accent-[#E9D0A9]">
+                <div>
+                  <p class="text-sm font-semibold">تومار (همه‌ی سؤالات در یک صفحه)</p>
+                  <p class="text-xs text-white/45">شرکت‌کننده با اسکرول بین سؤالات جابه‌جا می‌شود.</p>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 rounded-lg border border-white/10 p-3 cursor-pointer hover:border-gold/40 transition-colors has-[:checked]:border-gold has-[:checked]:bg-gold/5">
+                <input type="radio" name="layoutMode" value="paged" onchange="examState.settings.layout=this.value" class="accent-[#E9D0A9]">
+                <div>
+                  <p class="text-sm font-semibold">تک‌سؤالی (با دکمه‌ی بعدی/قبلی)</p>
+                  <p class="text-xs text-white/45">هر بار فقط یک سؤال نمایش داده می‌شود.</p>
+                </div>
+              </label>
+            </div>
+
+            <div class="divider-gold mb-5"></div>
+
+            <h4 class="font-bold text-sm mb-2">بانک سؤال (انتخاب تصادفی)</h4>
+            <label class="flex items-center gap-3 rounded-lg border border-white/10 p-3 cursor-pointer hover:border-gold/40 transition-colors mb-3 has-[:checked]:border-gold has-[:checked]:bg-gold/5">
+              <input type="checkbox" id="questionBankToggle" onchange="toggleQuestionBankMode(this.checked)" class="accent-[#E9D0A9]">
+              <div>
+                <p class="text-sm font-semibold">فعال‌سازی حالت بانک سؤال</p>
+                <p class="text-xs text-white/45">مثلاً از ۱۵۰۰ سؤال، هر بار فقط تعدادی به‌صورت تصادفی نمایش داده شود.</p>
+              </div>
+            </label>
+            <div id="questionBankCountBox" class="hidden">
+              <label class="block text-xs text-white/50 mb-1.5">تعداد سؤال نمایش‌داده‌شده در هر آزمون</label>
+              <input type="number" id="questionsPerAttemptInput" value="40" min="1" oninput="examState.settings.questionsPerAttempt=Number(this.value)" class="w-full rounded-lg px-3 py-2.5 text-sm fa-num">
+              <p class="text-[11px] text-white/40 mt-1.5 leading-5">هر شرکت‌کننده، این تعداد سؤال را به‌صورت تصادفی از کل بانک سؤالات شما دریافت می‌کند.</p>
+            </div>
           </div>
 
           <!-- questions -->
@@ -547,6 +582,9 @@ const examState = {
     timeLimitMinutes: 45,
     shuffleQuestions: true,
     resultDisplay: "scoreOnly", // hidden | scoreOnly | detailed
+    layout: "scroll", // scroll | paged
+    questionBankMode: false,
+    questionsPerAttempt: 40,
     access: {
       mode: "public", // public | restricted
       allowedIds: []
@@ -715,6 +753,18 @@ function toggleCorrect(qid, oid){
 }
 
 /* ============================================================
+   QUESTION BANK MODE
+   ============================================================ */
+function toggleQuestionBankMode(checked){
+  examState.settings.questionBankMode = checked;
+  document.getElementById('questionBankCountBox').classList.toggle('hidden', !checked);
+  if(checked && !examState.settings.questionsPerAttempt){
+    examState.settings.questionsPerAttempt = 40;
+    document.getElementById('questionsPerAttemptInput').value = 40;
+  }
+}
+
+/* ============================================================
    ACCESS CONTROL
    ============================================================ */
 function setAccessMode(mode){
@@ -752,6 +802,9 @@ function buildExportObject(){
       timeLimitMinutes: examState.settings.timeLimitMinutes,
       shuffleQuestions: examState.settings.shuffleQuestions,
       resultDisplay: examState.settings.resultDisplay,
+      layout: examState.settings.layout || 'scroll',
+      questionBankMode: !!examState.settings.questionBankMode,
+      questionsPerAttempt: examState.settings.questionsPerAttempt || 40,
       access: {
         mode: examState.settings.access.mode,
         allowedIds: examState.settings.access.mode === 'restricted' ? examState.settings.access.allowedIds : []
@@ -786,6 +839,9 @@ function importJSON(e){
       examState.settings.timeLimitMinutes = data.settings?.timeLimitMinutes ?? 45;
       examState.settings.shuffleQuestions = data.settings?.shuffleQuestions ?? true;
       examState.settings.resultDisplay = data.settings?.resultDisplay || 'scoreOnly';
+      examState.settings.layout = data.settings?.layout || 'scroll';
+      examState.settings.questionBankMode = !!data.settings?.questionBankMode;
+      examState.settings.questionsPerAttempt = data.settings?.questionsPerAttempt || 40;
       examState.settings.access.mode = data.settings?.access?.mode || 'public';
       examState.settings.access.allowedIds = data.settings?.access?.allowedIds || [];
       examState.questions = (data.questions||[]).map(q=>({
@@ -798,6 +854,10 @@ function importJSON(e){
       document.querySelector(`input[name="accessMode"][value="${examState.settings.access.mode}"]`).checked = true;
       setAccessMode(examState.settings.access.mode);
       document.querySelector(`input[name="resultDisplay"][value="${examState.settings.resultDisplay}"]`).checked = true;
+      document.querySelector(`input[name="layoutMode"][value="${examState.settings.layout}"]`).checked = true;
+      document.getElementById('questionBankToggle').checked = examState.settings.questionBankMode;
+      document.getElementById('questionsPerAttemptInput').value = examState.settings.questionsPerAttempt;
+      toggleQuestionBankMode(examState.settings.questionBankMode);
       parseAllowedIds();
       renderQuestions();
       alert('آزمون با موفقیت درون‌ریزی شد.');
@@ -883,7 +943,7 @@ async function publishExam(){
   const accessNote = examState.settings.access.mode === 'restricted'
     ? `🔒 دسترسی محدود فعال است — فقط ${toFa(examState.settings.access.allowedIds.length)} کد ثبت‌شده در فهرست مجاز می‌توانند وارد شوند.`
     : '🔓 دسترسی عمومی است — هرکس این لینک را داشته باشد می‌تواند وارد شود.';
-  note.textContent = accessNote + ` ظرفیت این آزمون بر اساس پلن فعلی، حداکثر ${toFa(limit)} شرکت‌کننده است. این لینک ثابت است — با ویرایش و انتشار دوباره تغییر نمی‌کند.`;
+  note.textContent = accessNote + ` ظرفیت این آزمون بر اساس پلن فعلی، حداکثر ${toFa(limit)} شرکت‌کننده در هر هفته است (هر شنبه ریست می‌شود). این لینک ثابت است — با ویرایش و انتشار دوباره تغییر نمی‌کند.`;
   document.getElementById('publishModal').classList.remove('hidden');
   document.getElementById('publishModal').classList.add('flex');
   startResultsListener();
@@ -1160,7 +1220,8 @@ function loadMyExams(){
         card.innerHTML = `
           <div class="min-w-0">
             <p class="font-bold text-sm truncate mb-1">${escapeHtml(d.title||'بدون عنوان')}</p>
-            <p class="text-xs text-white/45 fa-num">${toFa(qCount)} سؤال · ${toFa(d.participantCount||0)} شرکت‌کننده از ${toFa(d.userLimit ?? '—')} ظرفیت</p>
+            <p class="text-xs text-white/45 fa-num">${toFa(qCount)} سؤال · ${toFa(d.participantCount||0)} شرکت‌کننده (مجموع) · ظرفیت هفتگی: ${toFa(d.userLimit ?? '—')} نفر</p>
+            <p class="text-[11px] text-white/35 mt-0.5">${d.settings?.layout==='paged' ? 'نمایش تک‌سؤالی' : 'نمایش تومار'}${d.settings?.questionBankMode ? ` · بانک سؤال (${toFa(d.settings?.questionsPerAttempt||40)} از ${toFa((d.questions||[]).length)})` : ''}</p>
           </div>
           <div class="flex flex-wrap items-center gap-2 shrink-0">
             <button onclick="openExamForEdit('${examId}')" class="btn-outline text-xs font-bold px-3 py-2 rounded-lg">ویرایش</button>
@@ -1188,6 +1249,9 @@ async function loadExamIntoState(examId){
     examState.settings.timeLimitMinutes = d.settings?.timeLimitMinutes ?? 45;
     examState.settings.shuffleQuestions = d.settings?.shuffleQuestions ?? true;
     examState.settings.resultDisplay = d.settings?.resultDisplay || 'scoreOnly';
+    examState.settings.layout = d.settings?.layout || 'scroll';
+    examState.settings.questionBankMode = !!d.settings?.questionBankMode;
+    examState.settings.questionsPerAttempt = d.settings?.questionsPerAttempt || 40;
     examState.settings.access.mode = d.settings?.access?.mode || 'public';
     examState.settings.access.allowedIds = d.settings?.access?.allowedIds || [];
     examState.questions = (d.questions||[]).map(q=>({
@@ -1200,6 +1264,10 @@ async function loadExamIntoState(examId){
     document.querySelector(`input[name="accessMode"][value="${examState.settings.access.mode}"]`).checked = true;
     setAccessMode(examState.settings.access.mode);
     document.querySelector(`input[name="resultDisplay"][value="${examState.settings.resultDisplay}"]`).checked = true;
+    document.querySelector(`input[name="layoutMode"][value="${examState.settings.layout}"]`).checked = true;
+    document.getElementById('questionBankToggle').checked = examState.settings.questionBankMode;
+    document.getElementById('questionsPerAttemptInput').value = examState.settings.questionsPerAttempt;
+    toggleQuestionBankMode(examState.settings.questionBankMode);
     parseAllowedIds();
     renderQuestions();
     startResultsListener();
@@ -1235,6 +1303,9 @@ function startNewExam(){
   examState.settings.timeLimitMinutes = 45;
   examState.settings.shuffleQuestions = true;
   examState.settings.resultDisplay = 'scoreOnly';
+  examState.settings.layout = 'scroll';
+  examState.settings.questionBankMode = false;
+  examState.settings.questionsPerAttempt = 40;
   examState.settings.access.mode = 'public';
   examState.settings.access.allowedIds = [];
   examState.questions = [ newQuestion() ];
@@ -1248,6 +1319,11 @@ function startNewExam(){
   setAccessMode('public');
   const scoreOnlyRadio = document.querySelector('input[name="resultDisplay"][value="scoreOnly"]');
   if(scoreOnlyRadio) scoreOnlyRadio.checked = true;
+  const scrollRadio = document.querySelector('input[name="layoutMode"][value="scroll"]');
+  if(scrollRadio) scrollRadio.checked = true;
+  document.getElementById('questionBankToggle').checked = false;
+  document.getElementById('questionsPerAttemptInput').value = 40;
+  toggleQuestionBankMode(false);
   renderQuestions();
 }
 
