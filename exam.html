@@ -142,7 +142,7 @@
           <p id="gateError" class="hidden text-xs text-red-300 mb-2">این کد در فهرست شرکت‌کنندگان مجاز یافت نشد.</p>
         </div>
 
-        <div class="max-w-sm mx-auto text-right mb-8">
+        <div id="nameFieldBox" class="max-w-sm mx-auto text-right mb-8">
           <label class="block text-xs text-white/50 mb-2">نام و نام خانوادگی</label>
           <input id="participantNameInput" placeholder="نام خود را وارد کنید" class="w-full rounded-lg px-3 py-2.5 text-sm">
         </div>
@@ -290,12 +290,19 @@ function renderEntry(){
   if(exam.settings?.access?.mode === 'restricted'){
     document.getElementById('restrictedGate').classList.remove('hidden');
   }
+  // national/practice exams don't track identity — skip the name field entirely
+  if(exam.settings?.isNational){
+    document.getElementById('nameFieldBox').classList.add('hidden');
+  }
   showView('view-entry');
 }
 
 async function startExam(){
-  const name = document.getElementById('participantNameInput').value.trim();
-  if(!name){
+  const isNational = !!exam.settings?.isNational;
+  const name = isNational
+    ? (document.getElementById('participantNameInput').value.trim() || 'شرکت‌کننده')
+    : document.getElementById('participantNameInput').value.trim();
+  if(!isNational && !name){
     document.getElementById('participantNameInput').focus();
     return;
   }
