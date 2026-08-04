@@ -88,6 +88,8 @@
         <h1 class="text-2xl sm:text-3xl font-black mt-3">فعال‌سازی پلن</h1>
       </div>
 
+      <p id="currentPlanNote" class="hidden text-center text-xs text-white/45 fa-num mb-4"></p>
+
       <div class="glass rounded-2xl p-6 mb-6 flex items-center justify-between">
         <div>
           <p class="text-white/45 text-xs mb-1">پلن انتخابی</p>
@@ -188,7 +190,12 @@ const usersParam = params.get('users');
 const isCustom = usersParam === 'custom';
 const usersNum = isCustom ? 'custom' : Number(usersParam || 0);
 
-function renderPlanSummary(){
+function renderPlanSummary(currentUserLimit, currentPlanTier){
+  if(currentUserLimit !== undefined){
+    const label = `${currentPlanTier==='paid'?'پرداختی':'رایگان'} — ${currentUserLimit==='custom'?'سفارشی':toFa(currentUserLimit)} کاربر`;
+    document.getElementById('currentPlanNote').textContent = 'پلن فعلی شما: ' + label;
+    document.getElementById('currentPlanNote').classList.remove('hidden');
+  }
   if(isCustom){
     document.getElementById('planUsersLabel').textContent = 'کاربر سفارشی';
     document.getElementById('planOldPrice').textContent = '';
@@ -268,11 +275,16 @@ async function submitPaymentRequest(){
 
   try{
     const price = isCustom ? null : (PRICING[usersNum] ? PRICING[usersNum].price : null);
+    const currentUserLimit = cachedCurrentPlan?.userLimit ?? 3;
+    const currentPlanTier = cachedCurrentPlan?.planTier ?? 'free';
+
     await db.collection('paymentRequests').add({
       uid: currentUser.uid,
       email: currentUser.email || '',
       requestedUsers: usersNum,
       amount: price,
+      currentUserLimit: currentUserLimit,
+      currentPlanTier: currentPlanTier,
       receiptImage: receiptImage,
       receiptText: receiptText || null,
       status: 'pending',
@@ -307,6 +319,8 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let currentUser = null;
 
+let cachedCurrentPlan = null; // { userLimit, planTier } — fetched once, reused on submit
+
 firebase.auth().onAuthStateChanged(async user=>{
   if(!user){
     window.location.href = 'login.html' + window.location.search;
@@ -315,7 +329,15 @@ firebase.auth().onAuthStateChanged(async user=>{
   currentUser = user;
   document.getElementById('authGate').classList.add('hidden');
   document.getElementById('checkoutApp').classList.remove('hidden');
-  renderPlanSummary();
+
+  try{
+    const profileSnap = await db.collection('users').doc(user.uid).get();
+    if(profileSnap.exists){
+      cachedCurrentPlan = { userLimit: profileSnap.data().userLimit ?? 3, planTier: profileSnap.data().planTier || 'free' };
+    }
+  }catch(e){ /* renderPlanSummary handles the missing case gracefully */ }
+
+  renderPlanSummary(cachedCurrentPlan?.userLimit, cachedCurrentPlan?.planTier);
 
   try{
     const pending = await db.collection('paymentRequests')
