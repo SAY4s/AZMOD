@@ -1511,6 +1511,43 @@ function copyExamLink(examId){
 }
 
 let myExamsUnsub = null;
+function getWeekKey(date){
+  // matches exam.html's logic: Iranian week starts Saturday
+  const d = new Date(date || Date.now());
+  const day = d.getDay(); // 0=Sunday ... 6=Saturday
+  const diffFromSaturday = (day + 1) % 7;
+  d.setDate(d.getDate() - diffFromSaturday);
+  d.setHours(0,0,0,0);
+  return d.toISOString().slice(0,10);
+}
+async function loadWeeklyLockStatus(examId, userLimit, isNational){
+  const el = document.getElementById('weekStatus-'+examId);
+  if(!el) return;
+  if(isNational){
+    el.textContent = '🌐 آزمون سراسری — بدون محدودیت هفتگی';
+    el.className = 'text-[11px] mt-1 text-white/35';
+    return;
+  }
+  const limit = Number(userLimit);
+  if(!limit || !Number.isFinite(limit)){
+    el.textContent = '';
+    return;
+  }
+  try{
+    const weekKey = getWeekKey();
+    const snap = await db.collection('exams').doc(examId).collection('weeklyCounts').doc(weekKey).get();
+    const count = snap.exists ? (snap.data().count || 0) : 0;
+    if(count >= limit){
+      el.textContent = `🔒 ظرفیت این هفته تکمیل شده (${toFa(count)} از ${toFa(limit)}) — شنبه ریست می‌شود`;
+      el.className = 'text-[11px] mt-1 text-red-300 fa-num';
+    } else {
+      el.textContent = `این هفته: ${toFa(count)} از ${toFa(limit)} شرکت‌کننده`;
+      el.className = 'text-[11px] mt-1 text-white/40 fa-num';
+    }
+  }catch(err){
+    el.textContent = '';
+  }
+}
 function loadMyExams(){
   if(!db || !currentUser) return;
   document.getElementById('myExamsLoading').classList.remove('hidden');
@@ -1542,6 +1579,7 @@ function loadMyExams(){
             <p class="font-bold text-sm truncate mb-1">${escapeHtml(d.title||'بدون عنوان')}</p>
             <p class="text-xs text-white/45 fa-num">${toFa(qCount)} سؤال · ${toFa(d.participantCount||0)} شرکت‌کننده (مجموع) · ظرفیت هفتگی: ${toFa(d.userLimit ?? '—')} نفر</p>
             <p class="text-[11px] text-white/35 mt-0.5">${d.settings?.layout==='paged' ? 'نمایش تک‌سؤالی' : 'نمایش تومار'}${d.settings?.questionBankMode ? ` · بانک سؤال (${toFa(d.settings?.questionsPerAttempt||40)} از ${toFa((d.questions||[]).length)})` : ''}</p>
+            <p id="weekStatus-${examId}" class="text-[11px] mt-1"></p>
           </div>
           <div class="flex flex-wrap items-center gap-2 shrink-0">
             <button onclick="openExamForEdit('${examId}')" class="btn-outline text-xs font-bold px-3 py-2 rounded-lg">ویرایش</button>
@@ -1551,6 +1589,7 @@ function loadMyExams(){
           </div>
         `;
         list.appendChild(card);
+        loadWeeklyLockStatus(examId, d.userLimit, d.settings?.isNational);
       });
     }, err=>{
       console.warn('loadMyExams error', err);
