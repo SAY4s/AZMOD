@@ -257,7 +257,7 @@ let startedAt = null;
     if(!snap.exists) throw new Error('این آزمون یافت نشد یا حذف شده است.');
     const d = snap.data();
     if(!d.questions || !d.questions.length) throw new Error('این آزمون هیچ سؤالی ندارد.');
-    exam = { title: d.title, description: d.description, settings: d.settings, questions: d.questions };
+    exam = { title: d.title, description: d.description, settings: d.settings, questions: d.questions, userLimit: d.userLimit };
     ownerUid = d.ownerUid;
   }catch(err){
     document.getElementById('errorDetail').textContent = 'جزئیات فنی خطا: ' + err.message;
@@ -394,16 +394,12 @@ async function reserveSeat(){
   if(exam.settings?.isNational) return true; // national exams are open practice — no plan-based cap
 
   try{
-    // live lookup: admin plan changes apply immediately, not just at publish time
-    let numericLimit = null;
-    if(ownerUid){
-      const profileSnap = await db.collection('users').doc(ownerUid).get();
-      if(profileSnap.exists){
-        const u = profileSnap.data().userLimit;
-        const n = Number(u);
-        if(u !== 'custom' && Number.isFinite(n) && n > 0) numericLimit = n;
-      }
-    }
+    // use the limit cached on the exam doc itself — it's publicly readable, unlike the
+    // owner's private profile (which anonymous participants can't read). This means an
+    // admin plan change applies to a given exam the next time its owner republishes it.
+    const u = exam.userLimit;
+    const n = Number(u);
+    const numericLimit = (u !== 'custom' && Number.isFinite(n) && n > 0) ? n : null;
     if(numericLimit === null) return true; // unlimited/custom plan or unknown — don't block
 
     const weekKey = getWeekKey();
