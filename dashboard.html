@@ -68,6 +68,10 @@
     content:''; position:absolute; right:0; bottom:-9px; width:100%; height:2px; background:#E9D0A9; border-radius:2px;
   }
 
+  .admin-subtab { background:rgba(255,255,255,0.04); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.08); transition:all .2s ease; }
+  .admin-subtab:hover { color:#fff; border-color:rgba(233,208,169,.3); }
+  .admin-subtab.active { background:rgba(233,208,169,0.12); color:#E9D0A9; border-color:rgba(233,208,169,.4); }
+
   .view { display:none; animation: fadeUp .5s cubic-bezier(.2,.8,.2,1) both; }
   .view.active { display:block; }
   @keyframes fadeUp { from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
@@ -535,63 +539,101 @@
 
       <!-- ================= VIEW: ADMIN ================= -->
       <section id="view-admin" class="view">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="font-bold text-lg flex items-center gap-2">
-            💳 درخواست‌های پرداخت
-            <span id="pendingPaymentsBadge" class="hidden text-xs bg-gold text-charcoal-dark font-black px-2 py-0.5 rounded-full fa-num"></span>
-          </h3>
-          <button onclick="loadPaymentRequests()" class="btn-outline text-xs font-bold px-4 py-2 rounded-lg">بروزرسانی</button>
-        </div>
-        <div id="paymentRequestsLoading" class="glass rounded-2xl p-10 text-center text-white/45 text-sm">در حال بارگذاری...</div>
-        <div id="paymentRequestsEmpty" class="hidden glass rounded-2xl p-10 text-center text-white/45 text-sm">درخواست در حال بررسی‌ای وجود ندارد.</div>
-        <div id="paymentRequestsList" class="space-y-4"></div>
-
-        <div class="divider-gold my-10"></div>
-
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="font-bold text-lg flex items-center gap-2">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E9D0A9" stroke-width="1.8"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/></svg>
-            تعیین پلن کاربران
-          </h3>
-          <button onclick="loadAllUsers()" class="btn-outline text-xs font-bold px-4 py-2 rounded-lg">بروزرسانی</button>
-        </div>
-
-        <div id="adminLoading" class="glass rounded-2xl p-10 text-center text-white/45 text-sm">در حال بارگذاری کاربران...</div>
-        <div id="adminEmpty" class="hidden glass rounded-2xl p-10 text-center text-white/45 text-sm">کاربری یافت نشد.</div>
-
-        <div class="glass rounded-2xl p-5 overflow-x-auto scrollbar-thin">
-          <table id="adminTable" class="hidden w-full text-sm min-w-[640px]">
-            <thead>
-              <tr class="text-white/45 text-xs border-b border-white/10">
-                <th class="text-right font-medium py-3 px-2">ایمیل کاربر</th>
-                <th class="text-right font-medium py-3 px-2">پلن فعلی</th>
-                <th class="text-right font-medium py-3 px-2">تغییر پلن</th>
-                <th class="text-right font-medium py-3 px-2">عملیات</th>
-              </tr>
-            </thead>
-            <tbody id="adminUsersBody" class="divide-y divide-white/5"></tbody>
-          </table>
-        </div>
-
-        <div class="divider-gold my-10"></div>
-
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="font-bold text-lg flex items-center gap-2">
-            🌐 آزمون سراسری
-            <span class="text-xs text-white/40 font-normal">(نمایش در صفحه اصلی سایت)</span>
-          </h3>
-          <button onclick="createNewExamUI(true)" class="btn-gold text-sm font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
-            ساخت آزمون سراسری جدید
+        <div class="flex items-center gap-2 mb-8 overflow-x-auto pb-1">
+          <button data-admin-tab="payments" onclick="switchAdminSubTab('payments')" class="admin-subtab whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1.5">
+            💳 پرداخت‌ها
+            <span id="pendingPaymentsBadge" class="hidden text-[10px] bg-gold text-charcoal-dark font-black px-1.5 py-0.5 rounded-full fa-num"></span>
           </button>
+          <button data-admin-tab="national" onclick="switchAdminSubTab('national')" class="admin-subtab whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold">🌐 آزمون سراسری</button>
+          <button data-admin-tab="users" onclick="switchAdminSubTab('users')" class="admin-subtab whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold">👥 کاربران</button>
+          <button data-admin-tab="custom" onclick="switchAdminSubTab('custom')" class="admin-subtab whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold">⚙️ سفارشی</button>
         </div>
-        <div id="nationalExamsEmpty" class="hidden glass rounded-2xl p-10 text-center text-white/45 text-sm">
-          هنوز هیچ آزمون سراسری‌ای ساخته نشده است.
+
+        <!-- ---- payments ---- -->
+        <div id="admin-sub-payments" class="admin-subview">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="font-bold text-lg">درخواست‌های پرداخت در انتظار بررسی</h3>
+            <button onclick="loadPaymentRequests()" class="btn-outline text-xs font-bold px-4 py-2 rounded-lg">بروزرسانی</button>
+          </div>
+          <div id="paymentRequestsLoading" class="glass rounded-2xl p-10 text-center text-white/45 text-sm">در حال بارگذاری...</div>
+          <div id="paymentRequestsEmpty" class="hidden glass rounded-2xl p-10 text-center text-white/45 text-sm">درخواست در حال بررسی‌ای وجود ندارد.</div>
+          <div id="paymentRequestsList" class="space-y-4"></div>
         </div>
-        <div id="nationalExamsLoading" class="glass rounded-2xl p-10 text-center text-white/45 text-sm">
-          در حال بارگذاری...
+
+        <!-- ---- national exams ---- -->
+        <div id="admin-sub-national" class="admin-subview hidden">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="font-bold text-lg flex items-center gap-2">
+              آزمون سراسری
+              <span class="text-xs text-white/40 font-normal">(نمایش در صفحه اصلی سایت)</span>
+            </h3>
+            <button onclick="createNewExamUI(true)" class="btn-gold text-sm font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+              ساخت آزمون سراسری جدید
+            </button>
+          </div>
+          <div id="nationalExamsEmpty" class="hidden glass rounded-2xl p-10 text-center text-white/45 text-sm">
+            هنوز هیچ آزمون سراسری‌ای ساخته نشده است.
+          </div>
+          <div id="nationalExamsLoading" class="glass rounded-2xl p-10 text-center text-white/45 text-sm">
+            در حال بارگذاری...
+          </div>
+          <div id="nationalExamsList" class="space-y-3"></div>
         </div>
-        <div id="nationalExamsList" class="space-y-3"></div>
+
+        <!-- ---- users / preset plans ---- -->
+        <div id="admin-sub-users" class="admin-subview hidden">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="font-bold text-lg">تعیین پلن کاربران</h3>
+            <button onclick="loadAllUsers()" class="btn-outline text-xs font-bold px-4 py-2 rounded-lg">بروزرسانی</button>
+          </div>
+          <div id="adminLoading" class="glass rounded-2xl p-10 text-center text-white/45 text-sm">در حال بارگذاری کاربران...</div>
+          <div id="adminEmpty" class="hidden glass rounded-2xl p-10 text-center text-white/45 text-sm">کاربری یافت نشد.</div>
+          <div class="glass rounded-2xl p-5 overflow-x-auto scrollbar-thin">
+            <table id="adminTable" class="hidden w-full text-sm min-w-[640px]">
+              <thead>
+                <tr class="text-white/45 text-xs border-b border-white/10">
+                  <th class="text-right font-medium py-3 px-2">ایمیل کاربر</th>
+                  <th class="text-right font-medium py-3 px-2">پلن فعلی</th>
+                  <th class="text-right font-medium py-3 px-2">تغییر پلن</th>
+                  <th class="text-right font-medium py-3 px-2">عملیات</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersBody" class="divide-y divide-white/5"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ---- custom per-user config ---- -->
+        <div id="admin-sub-custom" class="admin-subview hidden">
+          <h3 class="font-bold text-lg mb-2">تنظیمات سفارشی برای یک کاربر</h3>
+          <p class="text-white/45 text-sm mb-6">اینجا می‌توانید برای یک کاربر خاص، به‌جای پلن‌های آماده، هر عددی برای ظرفیت شرکت‌کننده، تعداد آزمون مجاز و دسترسی به کارنامه تعیین کنید.</p>
+
+          <div class="glass rounded-2xl p-6 max-w-lg">
+            <label class="block text-xs text-white/50 mb-2">انتخاب کاربر</label>
+            <select id="customUserSelect" onchange="onCustomUserSelected()" class="w-full rounded-lg px-3 py-2.5 text-sm mb-6">
+              <option value="">در حال بارگذاری فهرست کاربران...</option>
+            </select>
+
+            <div id="customUserFields" class="hidden">
+              <label class="block text-xs text-white/50 mb-1.5">ظرفیت شرکت‌کننده (هر عدد دلخواه)</label>
+              <input type="number" id="customUserLimitInput" min="1" class="w-full rounded-lg px-3 py-2.5 text-sm fa-num mb-4" placeholder="مثلاً ۲۰۰">
+
+              <label class="block text-xs text-white/50 mb-1.5">حداکثر تعداد آزمون قابل ساخت</label>
+              <input type="number" id="customMaxExamsInput" min="1" class="w-full rounded-lg px-3 py-2.5 text-sm fa-num mb-4" placeholder="مثلاً ۵">
+
+              <label class="flex items-center gap-3 rounded-lg border border-white/10 p-3 cursor-pointer hover:border-gold/40 transition-colors mb-6 has-[:checked]:border-gold has-[:checked]:bg-gold/5">
+                <input type="checkbox" id="customReportCardToggle" class="accent-[#E9D0A9]">
+                <div>
+                  <p class="text-sm font-semibold">دسترسی به صدور کارنامه</p>
+                  <p class="text-xs text-white/45">اگر فعال باشد، این کاربر می‌تواند کارنامه‌ی شرکت‌کنندگان را مشاهده و دانلود کند.</p>
+                </div>
+              </label>
+
+              <button onclick="saveCustomUserSettings()" class="btn-gold w-full font-bold py-3 rounded-xl">ذخیره تنظیمات سفارشی</button>
+            </div>
+          </div>
+        </div>
       </section>
 
     </main>
@@ -656,6 +698,7 @@
    STATE
    ============================================================ */
 let currentPlan = 'free'; // 'free' | 'paid'
+let myProfile = { planTier:'free', userLimit:3, maxExams:1, canReportCard:false };
 let qIdSeed = 0, oIdSeed = 0;
 
 const examState = {
@@ -719,15 +762,15 @@ examState.questions.push(Object.assign(newQuestion(), {
    ============================================================ */
 function refreshBulkReportBtn(){
   const btn = document.getElementById('bulkReportBtn');
-  if(currentPlan === 'free'){
-    btn.innerHTML = '🔒 کارنامه گروهی <span class="opacity-70">(ویژه پلن پرداختی)</span>';
+  if(!myProfile.canReportCard){
+    btn.innerHTML = '🔒 کارنامه گروهی <span class="opacity-70">(نیازمند دسترسی کارنامه)</span>';
   } else {
     btn.innerHTML = 'دانلود کارنامه گروهی (PDF)';
   }
 }
 function tryBulkReport(){
-  if(currentPlan === 'free'){
-    alert('صدور خودکار کارنامه فقط در پلن‌های پرداختی فعال است. برای فعال‌سازی، پلن خود را ارتقا دهید.');
+  if(!myProfile.canReportCard){
+    alert('دسترسی به صدور کارنامه برای حساب شما فعال نیست. برای فعال‌سازی با مدیریت تماس بگیرید.');
     return;
   }
   generateBulkReportPDF();
@@ -1041,6 +1084,20 @@ async function publishExam(){
   try{
     const examRef = db.collection('exams').doc(examState.examId);
     const snap = await examRef.get();
+
+    if(!snap.exists){
+      // this is a brand-new exam — check it doesn't exceed the account's exam limit
+      const maxExams = myProfile.maxExams ?? 1;
+      if(maxExams < 9999){
+        const countSnap = await db.collection('exams').where('ownerUid','==',currentUser.uid).get();
+        if(countSnap.size >= maxExams){
+          alert(`شما به حداکثر تعداد آزمون مجاز (${maxExams} آزمون) رسیده‌اید. برای افزایش این سقف با مدیریت تماس بگیرید.`);
+          if(btn){ btn.disabled = false; btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 10.5 15.5 6.5M8.5 13.5l7 4" stroke-linecap="round"/><circle cx="6" cy="12" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="18" cy="18" r="2.2"/></svg><span>انتشار آزمون</span>'; }
+          return;
+        }
+      }
+    }
+
     const payload = {
       ownerUid: currentUser.uid,
       title: examState.title,
@@ -1131,8 +1188,8 @@ function renderTable(){
         <td class="py-3 px-2 text-white/60 fa-num">${toFa(r.timeTakenMinutes ?? 0)} دقیقه</td>
         <td class="py-3 px-2"><span class="status-pill ${r.status==='pass'?'status-pass':'status-fail'}">${r.status==='pass'?'قبول':'مردود'}</span></td>
         <td class="py-3 px-2">
-          <button onclick="openReportCard('${r.id}')" class="text-xs ${currentPlan==='free' ? 'text-white/30' : 'text-gold hover:underline'}">
-            ${currentPlan==='free' ? '🔒 کارنامه' : 'مشاهده کارنامه'}
+          <button onclick="openReportCard('${r.id}')" class="text-xs ${myProfile.canReportCard ? 'text-gold hover:underline' : 'text-white/30'}">
+            ${myProfile.canReportCard ? 'مشاهده کارنامه' : '🔒 کارنامه'}
           </button>
         </td>
       `;
@@ -1195,8 +1252,8 @@ function buildReportCardHTML(result){
 }
 
 function openReportCard(resultId){
-  if(currentPlan === 'free'){
-    alert('صدور کارنامه فقط در پلن‌های پرداختی فعال است. برای فعال‌سازی، پلن خود را ارتقا دهید.');
+  if(!myProfile.canReportCard){
+    alert('دسترسی به صدور کارنامه برای حساب شما فعال نیست. برای فعال‌سازی با مدیریت تماس بگیرید.');
     return;
   }
   const result = liveResults.find(r=>r.id === resultId);
@@ -1431,7 +1488,13 @@ function switchTab(tab){
   if(view) view.classList.add('active');
   if(tab==='analytics') requestAnimationFrame(initCharts);
   if(tab==='myexams') loadMyExams();
-  if(tab==='admin'){ loadAllUsers(); loadNationalExams(); loadPaymentRequests(); }
+  if(tab==='admin'){
+    switchAdminSubTab('payments');
+    loadAllUsers();
+    loadNationalExams();
+    loadPaymentRequests();
+    populateCustomUserSelect();
+  }
 }
 document.querySelectorAll('.tabnav').forEach(btn=>{
   btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
@@ -1627,18 +1690,21 @@ async function loadAllUsers(){
       const uid = docSnap.id;
       const d = docSnap.data();
       const currentVal = d.userLimit ?? 3;
+      const isCustomVal = !tiers.includes(currentVal);
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="py-3 px-2">${escapeHtml(d.email||uid)}</td>
-        <td class="py-3 px-2 text-gold fa-num">${(d.planTier==='paid') ? 'پرداختی' : 'رایگان'} (${toFa(currentVal)} کاربر)</td>
+        <td class="py-3 px-2 text-gold fa-num">
+          ${(d.planTier==='paid') ? 'پرداختی' : 'رایگان'} (${isCustomVal ? 'سفارشی: '+toFa(currentVal) : toFa(currentVal)} کاربر)
+          ${isCustomVal ? '<span class="text-white/30 text-[10px]"> · از تب «سفارشی» تنظیم شده</span>' : ''}
+        </td>
         <td class="py-3 px-2">
-          <select id="planSel-${uid}" class="rounded-lg px-2 py-1.5 text-xs">
+          <select id="planSel-${uid}" class="rounded-lg px-2 py-1.5 text-xs" ${isCustomVal ? 'disabled title="این کاربر تنظیمات سفارشی دارد؛ برای تغییر از تب سفارشی استفاده کنید"' : ''}>
             ${tiers.map(n=>`<option value="${n}" ${currentVal===n?'selected':''}>${toFa(n)} کاربر</option>`).join('')}
-            <option value="custom" ${currentVal==='custom'?'selected':''}>سفارشی</option>
           </select>
         </td>
         <td class="py-3 px-2">
-          <button onclick="saveUserPlan('${uid}')" class="btn-outline text-xs font-bold px-3 py-1.5 rounded-lg">ذخیره</button>
+          <button onclick="saveUserPlan('${uid}')" class="btn-outline text-xs font-bold px-3 py-1.5 rounded-lg" ${isCustomVal ? 'disabled' : ''}>ذخیره</button>
         </td>
       `;
       body.appendChild(tr);
@@ -1654,10 +1720,13 @@ async function loadAllUsers(){
 async function saveUserPlan(uid){
   const sel = document.getElementById('planSel-'+uid);
   const val = sel.value;
-  const userLimit = val === 'custom' ? 'custom' : Number(val);
+  const userLimit = Number(val);
   const planTier = (val === '3') ? 'free' : 'paid';
+  // matches the original pricing matrix: free = 1 exam, no report cards; every paid tier = unlimited exams + report cards
+  const maxExams = planTier === 'free' ? 1 : 9999;
+  const canReportCard = planTier === 'paid';
   try{
-    await db.collection('users').doc(uid).update({ userLimit, planTier });
+    await db.collection('users').doc(uid).update({ userLimit, planTier, maxExams, canReportCard });
     alert('پلن کاربر با موفقیت بروزرسانی شد.');
     loadAllUsers();
   }catch(err){
@@ -1708,6 +1777,63 @@ async function loadNationalExams(){
 /* ============================================================
    PAYMENT REQUESTS — manual receipt review & approval
    ============================================================ */
+/* ============================================================
+   ADMIN SUB-TABS
+   ============================================================ */
+function switchAdminSubTab(tab){
+  document.querySelectorAll('.admin-subtab').forEach(b=>{
+    b.classList.toggle('active', b.dataset.adminTab === tab);
+  });
+  document.querySelectorAll('.admin-subview').forEach(v=>{
+    v.classList.toggle('hidden', v.id !== 'admin-sub-'+tab);
+  });
+}
+
+/* ============================================================
+   CUSTOM PER-USER SETTINGS
+   ============================================================ */
+let customUsersCache = [];
+async function populateCustomUserSelect(){
+  const sel = document.getElementById('customUserSelect');
+  try{
+    const snap = await db.collection('users').orderBy('email').get();
+    customUsersCache = snap.docs.map(d=>({ uid:d.id, ...d.data() }));
+    sel.innerHTML = '<option value="">— انتخاب کنید —</option>' +
+      customUsersCache.map(u=>`<option value="${u.uid}">${escapeHtml(u.email||u.uid)}</option>`).join('');
+  }catch(err){
+    sel.innerHTML = '<option value="">خطا در بارگذاری فهرست کاربران</option>';
+  }
+}
+function onCustomUserSelected(){
+  const uid = document.getElementById('customUserSelect').value;
+  const box = document.getElementById('customUserFields');
+  if(!uid){ box.classList.add('hidden'); return; }
+  const u = customUsersCache.find(x=>x.uid===uid);
+  box.classList.remove('hidden');
+  document.getElementById('customUserLimitInput').value = (u && u.userLimit && u.userLimit !== 'custom') ? u.userLimit : '';
+  document.getElementById('customMaxExamsInput').value = (u && u.maxExams) ? u.maxExams : '';
+  document.getElementById('customReportCardToggle').checked = !!(u && u.canReportCard);
+}
+async function saveCustomUserSettings(){
+  const uid = document.getElementById('customUserSelect').value;
+  if(!uid){ alert('لطفاً یک کاربر انتخاب کنید.'); return; }
+  const userLimit = Number(document.getElementById('customUserLimitInput').value);
+  const maxExams = Number(document.getElementById('customMaxExamsInput').value);
+  const canReportCard = document.getElementById('customReportCardToggle').checked;
+  if(!userLimit || userLimit < 1){ alert('ظرفیت شرکت‌کننده را درست وارد کنید.'); return; }
+  if(!maxExams || maxExams < 1){ alert('حداکثر تعداد آزمون را درست وارد کنید.'); return; }
+  try{
+    await db.collection('users').doc(uid).update({
+      planTier: 'paid', userLimit, maxExams, canReportCard
+    });
+    alert('تنظیمات سفارشی این کاربر ذخیره شد.');
+    populateCustomUserSelect();
+    loadAllUsers();
+  }catch(err){
+    alert('ذخیره با خطا مواجه شد.');
+  }
+}
+
 async function loadPaymentRequests(){
   if(!db) return;
   document.getElementById('paymentRequestsLoading').classList.remove('hidden');
@@ -1774,7 +1900,7 @@ async function approvePayment(reqId){
     if(!reqSnap.exists){ alert('این درخواست یافت نشد.'); return; }
     const d = reqSnap.data();
     const userLimit = d.requestedUsers === 'custom' ? 'custom' : Number(d.requestedUsers);
-    await db.collection('users').doc(d.uid).update({ planTier:'paid', userLimit });
+    await db.collection('users').doc(d.uid).update({ planTier:'paid', userLimit, maxExams:9999, canReportCard:true });
     await db.collection('paymentRequests').doc(reqId).update({
       status:'approved', resolvedAt: firebase.firestore.FieldValue.serverTimestamp(), resolvedBy: currentUser.uid
     });
@@ -1812,7 +1938,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 let currentUser = null;
-let myProfile = { planTier:'free', userLimit:3 };
 
 function loginRedirectUrl(){
   return 'login.html';
@@ -1835,16 +1960,21 @@ async function ensureUserProfile(user){
   try{
     const snap = await ref.get();
     if(!snap.exists){
-      const initial = { email:user.email||'', planTier:'free', userLimit:3, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+      const initial = { email:user.email||'', planTier:'free', userLimit:3, maxExams:1, canReportCard:false, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
       await ref.set(initial);
-      myProfile = { planTier:'free', userLimit:3 };
+      myProfile = { planTier:'free', userLimit:3, maxExams:1, canReportCard:false };
     }else{
       const d = snap.data();
-      myProfile = { planTier: d.planTier||'free', userLimit: d.userLimit ?? 3 };
+      myProfile = {
+        planTier: d.planTier||'free',
+        userLimit: d.userLimit ?? 3,
+        maxExams: d.maxExams ?? (d.planTier==='free' ? 1 : 9999),
+        canReportCard: d.canReportCard ?? (d.planTier==='paid')
+      };
     }
   }catch(err){
     console.warn('could not load profile (offline?)', err);
-    myProfile = { planTier:'free', userLimit:3 };
+    myProfile = { planTier:'free', userLimit:3, maxExams:1, canReportCard:false };
   }
   applyProfilePlan(myProfile);
   const isAdmin = (user.email === ADMIN_EMAIL);
